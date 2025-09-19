@@ -20,14 +20,22 @@ export function HomePage() {
 
   const fetchTopServers = async () => {
     try {
+      console.log('Fetching top servers...')
       const { data, error } = await supabase
-        .from('minecraft_servers')
+        .from('servers')
         .select('*')
-        .order('vote_count', { ascending: false })
+        .order('member_count', { ascending: false })
         .limit(6)
 
-      if (error) throw error
+      console.log('Servers fetch result:', { data, error })
+
+      if (error) {
+        console.error('Error fetching servers:', error)
+        throw error
+      }
+      
       setTopServers(data || [])
+      console.log('Top servers set:', data)
     } catch (error) {
       console.error('Error fetching top servers:', error)
     } finally {
@@ -37,16 +45,19 @@ export function HomePage() {
 
   const fetchStats = async () => {
     try {
-      const [serversResult, votesResult, usersResult] = await Promise.all([
-        supabase.from('minecraft_servers').select('id', { count: 'exact', head: true }),
+      console.log('Fetching stats...')
+      const [serversResult, votesResult, profilesResult] = await Promise.all([
+        supabase.from('servers').select('id', { count: 'exact', head: true }),
         supabase.from('votes').select('id', { count: 'exact', head: true }),
-        supabase.from('users').select('id', { count: 'exact', head: true })
+        supabase.from('profiles').select('id', { count: 'exact', head: true })
       ])
+
+      console.log('Stats fetch result:', { serversResult, votesResult, profilesResult })
 
       setStats({
         totalServers: serversResult.count || 0,
         totalVotes: votesResult.count || 0,
-        totalUsers: usersResult.count || 0
+        totalUsers: profilesResult.count || 0
       })
     } catch (error) {
       console.error('Error fetching stats:', error)
