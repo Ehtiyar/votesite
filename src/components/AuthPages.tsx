@@ -22,19 +22,11 @@ export function AuthPages({ type, onPageChange }: AuthPagesProps) {
     setLoading(true)
     setError('')
 
-    // Timeout ekle - 10 saniye sonra loading'i durdur
-    const timeoutId = setTimeout(() => {
-      setLoading(false)
-      setError('İşlem zaman aşımına uğradı. Lütfen tekrar deneyin.')
-    }, 10000)
-
     try {
       if (type === 'register') {
-        console.log('Starting registration process')
         const result = await signUp(formData.email, formData.password, formData.username)
-        console.log('Registration completed:', result)
         if (result.user) {
-          alert('Registration successful! You are now logged in.')
+          console.log('Registration successful, redirecting to home')
           onPageChange('home')
         }
       } else {
@@ -45,9 +37,12 @@ export function AuthPages({ type, onPageChange }: AuthPagesProps) {
       }
     } catch (error: any) {
       console.error('Auth error:', error)
-      setError(error.message || 'An error occurred')
+      if (error.message?.includes('Email not confirmed')) {
+        setError('Email doğrulama gerekli. Lütfen Supabase ayarlarını kontrol edin.')
+      } else {
+        setError(error.message || 'An error occurred')
+      }
     } finally {
-      clearTimeout(timeoutId)
       setLoading(false)
     }
   }
