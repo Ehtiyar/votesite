@@ -47,6 +47,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (error) {
         console.error('Profile fetch error:', error)
+        
+        // Eğer profile yoksa, oluştur
+        if (error.code === 'PGRST116') {
+          console.log('Profile not found, creating new one...')
+          await createUserProfile(userId)
+          return
+        }
+        
         throw error
       }
       
@@ -57,6 +65,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setLoading(false)
       console.log('Loading set to false')
+    }
+  }
+
+  const createUserProfile = async (userId: string) => {
+    console.log('Creating user profile for:', userId)
+    
+    try {
+      // Auth user bilgilerini al
+      const { data: authUser } = await supabase.auth.getUser()
+      
+      if (authUser.user) {
+        const { data, error } = await supabase
+          .from('profiles')
+          .insert([
+            {
+              id: userId,
+              email: authUser.user.email,
+              username: authUser.user.user_metadata?.username || 'user_' + userId.substring(0, 8)
+            }
+          ])
+          .select()
+          .single()
+
+        console.log('Profile creation result:', { data, error })
+
+        if (error) {
+          console.error('Profile creation error:', error)
+          throw error
+        }
+
+        setUser(data)
+        console.log('New user profile created and set:', data)
+      }
+    } catch (error) {
+      console.error('Error creating user profile:', error)
     }
   }
 
@@ -82,7 +125,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Email doğrulama kapalıysa otomatik login yap
-      if (data.user && !data.user.email_confirmed_at) {
+      if (data.user) {
         console.log('Auto-login after signup')
         // Kısa bir bekleme sonrası otomatik login
         setTimeout(async () => {
@@ -122,7 +165,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (data.user) {
         console.log('User signed in:', data.user.id)
-        await fetchUserProfile(data.user.id)
+        
+        // Basit user objesi oluştur
+        const simpleUser = {
+          id: data.user.id,
+          email: data.user.email,
+          username: data.user.user_metadata?.username || 'user_' + data.user.id.substring(0, 8)
+        }
+        
+        setUser(simpleUser)
+        console.log('Simple user set:', simpleUser)
+        
+        // Profile'ı arka planda fetch et
+        fetchUserProfile(data.user.id)
       }
     } catch (error) {
       console.error('SignIn catch error:', error)
