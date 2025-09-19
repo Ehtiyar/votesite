@@ -1,7 +1,8 @@
 import React, { useState } from 'react'
-import { Heart, Users, Calendar, Award, ExternalLink } from 'lucide-react'
+import { Heart, Users, Calendar, Award, ExternalLink, Wifi, WifiOff } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
+import { useServerStatus } from '../hooks/useServerStatus'
 import type { MinecraftServer } from '../types'
 
 interface ServerCardProps {
@@ -14,6 +15,9 @@ export function ServerCard({ server, rank, onVoteSuccess }: ServerCardProps) {
   const { user } = useAuth()
   const [isVoting, setIsVoting] = useState(false)
   const [hasVoted, setHasVoted] = useState(false)
+  
+  // Server status hook'u kullan
+  const { status, loading: statusLoading } = useServerStatus(server.invite_link, server.server_port || 25565)
 
   React.useEffect(() => {
     if (user) {
@@ -121,6 +125,36 @@ export function ServerCard({ server, rank, onVoteSuccess }: ServerCardProps) {
           <Award className="h-4 w-4" />
           <span className="font-bold">{server.member_count || 0}</span>
         </div>
+      </div>
+
+      {/* Online Status */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center space-x-2">
+          {statusLoading ? (
+            <div className="flex items-center space-x-1 text-gray-400">
+              <div className="w-3 h-3 bg-gray-600 rounded-full animate-pulse"></div>
+              <span className="text-xs">Checking...</span>
+            </div>
+          ) : status?.online ? (
+            <div className="flex items-center space-x-1 text-green-400">
+              <Wifi className="h-3 w-3" />
+              <span className="text-xs font-medium">
+                {status.players.online}/{status.players.max} online
+              </span>
+            </div>
+          ) : (
+            <div className="flex items-center space-x-1 text-red-400">
+              <WifiOff className="h-3 w-3" />
+              <span className="text-xs font-medium">Offline</span>
+            </div>
+          )}
+        </div>
+        
+        {status?.version && (
+          <span className="text-xs text-gray-400 bg-gray-700 px-2 py-1 rounded">
+            {status.version}
+          </span>
+        )}
       </div>
 
       <p className="text-gray-300 text-sm mb-4 line-clamp-3">{server.description}</p>
