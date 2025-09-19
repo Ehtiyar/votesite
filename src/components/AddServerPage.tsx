@@ -29,12 +29,19 @@ export function AddServerPage({ onPageChange }: AddServerPageProps) {
 
     try {
       const { error } = await supabase
-        .from('minecraft_servers')
+        .from('servers')
         .insert([
           {
-            ...formData,
-            owner_id: user.id,
-            vote_count: 0
+            name: formData.name,
+            description: formData.description,
+            invite_link: formData.ip_address,
+            category: formData.game_version,
+            ip_address: formData.ip_address,
+            game_version: formData.game_version,
+            votifier_key: formData.votifier_key,
+            votifier_port: formData.votifier_port,
+            vote_count: 0,
+            created_by: user.id
           }
         ])
 
