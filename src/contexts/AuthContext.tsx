@@ -34,6 +34,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const fetchUserProfile = async (userId: string) => {
+    console.log('Fetching user profile for:', userId)
+    
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -41,46 +43,94 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .eq('id', userId)
         .single()
 
-      if (error) throw error
+      console.log('Profile fetch result:', { data, error })
+
+      if (error) {
+        console.error('Profile fetch error:', error)
+        throw error
+      }
+      
       setUser(data)
+      console.log('User profile set:', data)
     } catch (error) {
       console.error('Error fetching user profile:', error)
     } finally {
       setLoading(false)
+      console.log('Loading set to false')
     }
   }
 
   const signUp = async (email: string, password: string, username: string) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          username: username
+    console.log('SignUp attempt:', { email, username })
+    
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            username: username
+          }
         }
+      })
+
+      console.log('SignUp result:', { data, error })
+
+      if (error) {
+        console.error('SignUp error:', error)
+        throw error
       }
-    })
 
-    if (error) throw error
+      // Email doğrulama kapalıysa otomatik login yap
+      if (data.user && !data.user.email_confirmed_at) {
+        console.log('Auto-login after signup')
+        // Kısa bir bekleme sonrası otomatik login
+        setTimeout(async () => {
+          try {
+            await signIn(email, password)
+          } catch (loginError) {
+            console.error('Auto-login failed:', loginError)
+          }
+        }, 1000)
+      }
 
-    // Email doğrulama kapalıysa otomatik login yap
-    if (data.user && !data.user.email_confirmed_at) {
-      // Kısa bir bekleme sonrası otomatik login
-      setTimeout(async () => {
-        await signIn(email, password)
-      }, 1000)
+      return data
+    } catch (error) {
+      console.error('SignUp catch error:', error)
+      throw error
+    } finally {
+      // Loading state'i her durumda false yap
+      setLoading(false)
     }
-
-    return data
   }
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
+    console.log('SignIn attempt:', { email })
+    
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
 
-    if (error) throw error
+      console.log('SignIn result:', { data, error })
+
+      if (error) {
+        console.error('SignIn error:', error)
+        throw error
+      }
+
+      if (data.user) {
+        console.log('User signed in:', data.user.id)
+        await fetchUserProfile(data.user.id)
+      }
+    } catch (error) {
+      console.error('SignIn catch error:', error)
+      throw error
+    } finally {
+      // Loading state'i her durumda false yap
+      setLoading(false)
+    }
   }
 
   const signOut = async () => {
