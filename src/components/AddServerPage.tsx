@@ -15,7 +15,8 @@ export function AddServerPage({ onPageChange }: AddServerPageProps) {
     game_version: '',
     description: '',
     votifier_key: '',
-    votifier_port: 8192
+    votifier_port: 8192,
+    server_port: 25565
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -40,6 +41,7 @@ export function AddServerPage({ onPageChange }: AddServerPageProps) {
             game_version: formData.game_version,
             votifier_key: formData.votifier_key,
             votifier_port: formData.votifier_port,
+            server_port: formData.server_port,
             vote_count: 0,
             created_by: user.id
           }
@@ -172,6 +174,28 @@ export function AddServerPage({ onPageChange }: AddServerPageProps) {
                   placeholder="8192"
                 />
               </div>
+            </div>
+
+            <div>
+              <label htmlFor="server_port" className="block text-white text-sm font-medium mb-2">
+                Server Port *
+              </label>
+              <div className="relative">
+                <Hash className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                <input
+                  type="number"
+                  id="server_port"
+                  name="server_port"
+                  required
+                  value={formData.server_port}
+                  onChange={handleInputChange}
+                  className="w-full pl-10 pr-3 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20"
+                  placeholder="25565"
+                />
+              </div>
+              <p className="text-gray-500 text-xs mt-1">
+                Default Minecraft server port (usually 25565)
+              </p>
             </div>
           </div>
 
