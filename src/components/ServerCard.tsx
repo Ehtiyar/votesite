@@ -69,8 +69,8 @@ export function ServerCard({ server, rank, onVoteSuccess }: ServerCardProps) {
 
       // Update server vote count
       const { error: updateError } = await supabase
-        .from('minecraft_servers')
-        .update({ vote_count: server.vote_count + 1 })
+        .from('servers')
+        .update({ member_count: server.member_count + 1 })
         .eq('id', server.id)
 
       if (updateError) throw updateError
@@ -88,7 +88,7 @@ export function ServerCard({ server, rank, onVoteSuccess }: ServerCardProps) {
   }
 
   const copyServerIP = () => {
-    navigator.clipboard.writeText(server.ip_address)
+    navigator.clipboard.writeText(server.invite_link)
     alert('Server IP copied to clipboard!')
   }
 
@@ -113,13 +113,13 @@ export function ServerCard({ server, rank, onVoteSuccess }: ServerCardProps) {
             onClick={copyServerIP}
             className="text-purple-400 hover:text-purple-300 text-sm font-mono flex items-center space-x-1 transition-colors"
           >
-            <span>{server.ip_address}</span>
+            <span>{server.invite_link}</span>
             <ExternalLink className="h-3 w-3" />
           </button>
         </div>
         <div className="flex items-center space-x-1 text-yellow-400">
           <Award className="h-4 w-4" />
-          <span className="font-bold">{server.vote_count}</span>
+          <span className="font-bold">{server.member_count || 0}</span>
         </div>
       </div>
 
@@ -128,7 +128,7 @@ export function ServerCard({ server, rank, onVoteSuccess }: ServerCardProps) {
       <div className="flex items-center justify-between text-sm text-gray-400 mb-4">
         <div className="flex items-center space-x-4">
           <span className="bg-blue-600 px-2 py-1 rounded text-white text-xs">
-            {server.game_version}
+            {server.category}
           </span>
           <div className="flex items-center space-x-1">
             <Calendar className="h-3 w-3" />
