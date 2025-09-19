@@ -24,9 +24,11 @@ export function AuthPages({ type, onPageChange }: AuthPagesProps) {
 
     try {
       if (type === 'register') {
-        await signUp(formData.email, formData.password, formData.username)
-        alert('Registration successful! Please check your email to verify your account.')
-        onPageChange('home')
+        const result = await signUp(formData.email, formData.password, formData.username)
+        if (result.user) {
+          alert('Registration successful! You are now logged in.')
+          onPageChange('home')
+        }
       } else {
         await signIn(formData.email, formData.password)
         onPageChange('home')
