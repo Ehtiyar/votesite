@@ -12,7 +12,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
-        fetchUserProfile(session.user.id)
+        // Basit user objesi oluştur
+        const simpleUser = {
+          id: session.user.id,
+          email: session.user.email,
+          username: session.user.user_metadata?.username || 'user_' + session.user.id.substring(0, 8)
+        }
+        setUser(simpleUser)
+        setLoading(false)
       } else {
         setLoading(false)
       }
@@ -22,7 +29,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (session?.user) {
-          await fetchUserProfile(session.user.id)
+          // Basit user objesi oluştur
+          const simpleUser = {
+            id: session.user.id,
+            email: session.user.email,
+            username: session.user.user_metadata?.username || 'user_' + session.user.id.substring(0, 8)
+          }
+          setUser(simpleUser)
+          setLoading(false)
         } else {
           setUser(null)
           setLoading(false)
@@ -127,14 +141,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Email doğrulama kapalıysa otomatik login yap
       if (data.user) {
         console.log('Auto-login after signup')
-        // Kısa bir bekleme sonrası otomatik login
-        setTimeout(async () => {
-          try {
-            await signIn(email, password)
-          } catch (loginError) {
-            console.error('Auto-login failed:', loginError)
-          }
-        }, 1000)
+        
+        // Basit user objesi oluştur
+        const simpleUser = {
+          id: data.user.id,
+          email: data.user.email,
+          username: data.user.user_metadata?.username || 'user_' + data.user.id.substring(0, 8)
+        }
+        
+        setUser(simpleUser)
+        setLoading(false)
+        console.log('User registered and logged in:', simpleUser)
       }
 
       return data
@@ -166,7 +183,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (data.user) {
         console.log('User signed in:', data.user.id)
         
-        // Basit user objesi oluştur
+        // Basit user objesi oluştur - profile fetch yapmadan
         const simpleUser = {
           id: data.user.id,
           email: data.user.email,
@@ -174,10 +191,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
         
         setUser(simpleUser)
-        console.log('Simple user set:', simpleUser)
-        
-        // Profile'ı arka planda fetch et
-        fetchUserProfile(data.user.id)
+        setLoading(false)
+        console.log('Simple user set, login complete:', simpleUser)
       }
     } catch (error) {
       console.error('SignIn catch error:', error)
