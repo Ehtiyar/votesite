@@ -22,20 +22,32 @@ export function AuthPages({ type, onPageChange }: AuthPagesProps) {
     setLoading(true)
     setError('')
 
+    // Timeout ekle - 10 saniye sonra loading'i durdur
+    const timeoutId = setTimeout(() => {
+      setLoading(false)
+      setError('İşlem zaman aşımına uğradı. Lütfen tekrar deneyin.')
+    }, 10000)
+
     try {
       if (type === 'register') {
+        console.log('Starting registration process')
         const result = await signUp(formData.email, formData.password, formData.username)
+        console.log('Registration completed:', result)
         if (result.user) {
           alert('Registration successful! You are now logged in.')
           onPageChange('home')
         }
       } else {
+        console.log('Attempting login with:', formData.email)
         await signIn(formData.email, formData.password)
+        console.log('Login successful, changing page to home')
         onPageChange('home')
       }
     } catch (error: any) {
+      console.error('Auth error:', error)
       setError(error.message || 'An error occurred')
     } finally {
+      clearTimeout(timeoutId)
       setLoading(false)
     }
   }
