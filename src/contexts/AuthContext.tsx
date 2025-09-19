@@ -63,8 +63,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (error) throw error
 
-    // Profile otomatik olarak trigger ile oluşturulacak
-    // Manuel insert'e gerek yok
+    // Email doğrulama kapalıysa otomatik login yap
+    if (data.user && !data.user.email_confirmed_at) {
+      // Kısa bir bekleme sonrası otomatik login
+      setTimeout(async () => {
+        await signIn(email, password)
+      }, 1000)
+    }
+
+    return data
   }
 
   const signIn = async (email: string, password: string) => {
