@@ -10,24 +10,32 @@ import { AboutPage } from './components/AboutPage'
 import { ServerDetailPage } from './components/ServerDetailPage'
 import { NewsPage } from './components/NewsPage'
 import { AdminPanel } from './components/AdminPanel'
+import { AdminLogin } from './components/AdminLogin'
+import { ProfilePage } from './components/ProfilePage'
 
 function App() {
   return (
     <AuthProvider>
       <Router>
-        <Layout>
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/login" element={<AuthPages type="login" />} />
-            <Route path="/register" element={<AuthPages type="register" />} />
-            <Route path="/add-server" element={<AddServerPage />} />
-            <Route path="/leaderboard" element={<LeaderboardPage />} />
-            <Route path="/news" element={<NewsPage />} />
-            <Route path="/about" element={<AboutPage />} />
-            <Route path="/server/:id" element={<ServerDetailPage />} />
-            <Route path="/admin" element={<AdminPanel />} />
-          </Routes>
-        </Layout>
+        <Routes>
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin" element={<AdminPanel />} />
+          <Route path="/*" element={
+            <Layout>
+              <Routes>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/login" element={<AuthPages type="login" />} />
+                <Route path="/register" element={<AuthPages type="register" />} />
+                <Route path="/add-server" element={<AddServerPage />} />
+                <Route path="/leaderboard" element={<LeaderboardPage />} />
+                <Route path="/news" element={<NewsPage />} />
+                <Route path="/about" element={<AboutPage />} />
+                <Route path="/server/:id" element={<ServerDetailPage />} />
+                <Route path="/profile" element={<ProfilePage />} />
+              </Routes>
+            </Layout>
+          } />
+        </Routes>
       </Router>
     </AuthProvider>
   )
