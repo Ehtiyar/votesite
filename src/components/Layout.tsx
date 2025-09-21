@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Server, Trophy, Home, Info, LogOut, User, Settings, Plus, Heart, ChevronDown } from 'lucide-react'
+import { Server, Trophy, Home, Info, LogOut, User, Settings, Plus, Heart, ChevronDown, MessageCircle, Twitter, Instagram } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 
 interface LayoutProps {
@@ -62,6 +62,37 @@ export function Layout({ children }: LayoutProps) {
             </div>
 
             <div className="flex items-center space-x-4">
+              {/* Social Media Icons */}
+              <div className="hidden lg:flex items-center space-x-3">
+                <a
+                  href="https://discord.gg/minevote"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-400 hover:text-white transition-colors"
+                  title="Discord"
+                >
+                  <MessageCircle className="h-5 w-5" />
+                </a>
+                <a
+                  href="https://twitter.com/minevote"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-400 hover:text-white transition-colors"
+                  title="Twitter"
+                >
+                  <Twitter className="h-5 w-5" />
+                </a>
+                <a
+                  href="https://instagram.com/minevote"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-400 hover:text-white transition-colors"
+                  title="Instagram"
+                >
+                  <Instagram className="h-5 w-5" />
+                </a>
+              </div>
+
               {user ? (
                 <div className="relative">
                   <button
@@ -173,6 +204,51 @@ export function Layout({ children }: LayoutProps) {
       <main className="container mx-auto px-4 py-8">
         {children}
       </main>
+
+      {/* Footer with Social Media */}
+      <footer className="bg-black/20 backdrop-blur-sm border-t border-white/10 mt-16">
+        <div className="container mx-auto px-4 py-6">
+          <div className="flex flex-col md:flex-row items-center justify-between">
+            <div className="text-center md:text-left mb-4 md:mb-0">
+              <p className="text-gray-400 text-sm">
+                © 2024 MineVote. Tüm hakları saklıdır.
+              </p>
+            </div>
+            <div className="flex items-center space-x-4">
+              <span className="text-gray-400 text-sm">Bizi takip edin:</span>
+              <div className="flex items-center space-x-3">
+                <a
+                  href="https://discord.gg/minevote"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-400 hover:text-white transition-colors"
+                  title="Discord"
+                >
+                  <MessageCircle className="h-5 w-5" />
+                </a>
+                <a
+                  href="https://twitter.com/minevote"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-400 hover:text-white transition-colors"
+                  title="Twitter"
+                >
+                  <Twitter className="h-5 w-5" />
+                </a>
+                <a
+                  href="https://instagram.com/minevote"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-400 hover:text-white transition-colors"
+                  title="Instagram"
+                >
+                  <Instagram className="h-5 w-5" />
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   )
 }

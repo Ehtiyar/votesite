@@ -44,6 +44,8 @@ export function AdminPanel() {
     totalRevenue: 0
   })
   const [banners, setBanners] = useState<BannerAd[]>([])
+  const [users, setUsers] = useState<any[]>([])
+  const [servers, setServers] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('dashboard')
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false)
@@ -55,6 +57,8 @@ export function AdminPanel() {
       setIsAdminLoggedIn(true)
       fetchStats()
       fetchBanners()
+      fetchUsers()
+      fetchServers()
     } else {
       navigate('/admin/login')
     }
@@ -95,6 +99,34 @@ export function AdminPanel() {
       setBanners(data || [])
     } catch (error) {
       console.error('Error fetching banners:', error)
+    }
+  }
+
+  const fetchUsers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      setUsers(data || [])
+    } catch (error) {
+      console.error('Error fetching users:', error)
+    }
+  }
+
+  const fetchServers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('servers')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      setServers(data || [])
+    } catch (error) {
+      console.error('Error fetching servers:', error)
     } finally {
       setLoading(false)
     }
@@ -352,23 +384,50 @@ export function AdminPanel() {
                   </tr>
                 </thead>
                 <tbody>
-                  {/* Burada kullanıcı listesi gelecek */}
-                  <tr className="border-b border-white/10">
-                    <td className="py-3 text-gray-300">Örnek Kullanıcı</td>
-                    <td className="py-3 text-gray-300">user@example.com</td>
-                    <td className="py-3 text-gray-300">2024-01-15</td>
-                    <td className="py-3 text-gray-300">Player123</td>
-                    <td className="py-3">
-                      <div className="flex space-x-2">
-                        <button className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm transition-colors">
-                          Şifre Değiştir
-                        </button>
-                        <button className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-sm transition-colors">
-                          Hesabı Sil
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
+                  {users.map((user) => (
+                    <tr key={user.id} className="border-b border-white/10">
+                      <td className="py-3 text-gray-300">{user.username}</td>
+                      <td className="py-3 text-gray-300">{user.email}</td>
+                      <td className="py-3 text-gray-300">
+                        {new Date(user.created_at).toLocaleDateString('tr-TR')}
+                      </td>
+                      <td className="py-3 text-gray-300">{user.minecraft_nick || 'Belirtilmemiş'}</td>
+                      <td className="py-3">
+                        <div className="flex space-x-2">
+                          <button 
+                            onClick={() => {
+                              const newPassword = prompt('Yeni şifre:')
+                              if (newPassword) {
+                                // Şifre değiştirme işlemi burada yapılacak
+                                alert('Şifre değiştirme özelliği yakında eklenecek')
+                              }
+                            }}
+                            className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm transition-colors"
+                          >
+                            Şifre Değiştir
+                          </button>
+                          <button 
+                            onClick={() => {
+                              if (confirm('Bu kullanıcıyı silmek istediğinizden emin misiniz?')) {
+                                // Kullanıcı silme işlemi burada yapılacak
+                                alert('Kullanıcı silme özelliği yakında eklenecek')
+                              }
+                            }}
+                            className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-sm transition-colors"
+                          >
+                            Hesabı Sil
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {users.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="py-8 text-center text-gray-400">
+                        Henüz kullanıcı bulunmuyor
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -397,24 +456,48 @@ export function AdminPanel() {
                   </tr>
                 </thead>
                 <tbody>
-                  {/* Burada sunucu listesi gelecek */}
-                  <tr className="border-b border-white/10">
-                    <td className="py-3 text-gray-300">Örnek Sunucu</td>
-                    <td className="py-3 text-gray-300">play.example.com</td>
-                    <td className="py-3 text-gray-300">Survival</td>
-                    <td className="py-3 text-gray-300">15</td>
-                    <td className="py-3 text-gray-300">2024-01-15</td>
-                    <td className="py-3">
-                      <div className="flex space-x-2">
-                        <button className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm transition-colors">
-                          Düzenle
-                        </button>
-                        <button className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-sm transition-colors">
-                          Sil
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
+                  {servers.map((server) => (
+                    <tr key={server.id} className="border-b border-white/10">
+                      <td className="py-3 text-gray-300">{server.name}</td>
+                      <td className="py-3 text-gray-300">{server.invite_link}</td>
+                      <td className="py-3 text-gray-300">{server.category}</td>
+                      <td className="py-3 text-gray-300">{server.member_count || 0}</td>
+                      <td className="py-3 text-gray-300">
+                        {new Date(server.created_at).toLocaleDateString('tr-TR')}
+                      </td>
+                      <td className="py-3">
+                        <div className="flex space-x-2">
+                          <button 
+                            onClick={() => {
+                              // Sunucu düzenleme işlemi burada yapılacak
+                              alert('Sunucu düzenleme özelliği yakında eklenecek')
+                            }}
+                            className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm transition-colors"
+                          >
+                            Düzenle
+                          </button>
+                          <button 
+                            onClick={() => {
+                              if (confirm('Bu sunucuyu silmek istediğinizden emin misiniz?')) {
+                                // Sunucu silme işlemi burada yapılacak
+                                alert('Sunucu silme özelliği yakında eklenecek')
+                              }
+                            }}
+                            className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-sm transition-colors"
+                          >
+                            Sil
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {servers.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="py-8 text-center text-gray-400">
+                        Henüz sunucu bulunmuyor
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
