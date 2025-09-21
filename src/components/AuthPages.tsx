@@ -1,13 +1,14 @@
 import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Mail, Lock, User, ArrowRight } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 
 interface AuthPagesProps {
   type: 'login' | 'register'
-  onPageChange: (page: string) => void
 }
 
-export function AuthPages({ type, onPageChange }: AuthPagesProps) {
+export function AuthPages({ type }: AuthPagesProps) {
+  const navigate = useNavigate()
   const { signIn, signUp } = useAuth()
   const [formData, setFormData] = useState({
     email: '',
@@ -27,13 +28,13 @@ export function AuthPages({ type, onPageChange }: AuthPagesProps) {
         const result = await signUp(formData.email, formData.password, formData.username)
         if (result.user) {
           console.log('Registration successful, redirecting to home')
-          onPageChange('home')
+          navigate('/')
         }
       } else {
         console.log('Attempting login with:', formData.email)
         await signIn(formData.email, formData.password)
         console.log('Login successful, changing page to home')
-        onPageChange('home')
+        navigate('/')
       }
     } catch (error: any) {
       console.error('Auth error:', error)
@@ -149,7 +150,7 @@ export function AuthPages({ type, onPageChange }: AuthPagesProps) {
           <p className="text-gray-400">
             {type === 'register' ? 'Already have an account?' : "Don't have an account?"}
             <button
-              onClick={() => onPageChange(type === 'register' ? 'login' : 'register')}
+              onClick={() => navigate(type === 'register' ? '/login' : '/register')}
               className="ml-1 text-purple-400 hover:text-purple-300 font-medium transition-colors"
             >
               {type === 'register' ? 'Sign in' : 'Register'}
