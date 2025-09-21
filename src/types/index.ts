@@ -9,12 +9,24 @@ export interface MinecraftServer {
   id: string
   name: string
   ip_address: string
+  invite_link: string
+  server_port?: number
   game_version: string
   description: string
+  detailed_description?: string
+  banner_url?: string
+  discord_link?: string
+  website_link?: string
   votifier_key: string
   votifier_port: number
   owner_id: string
   vote_count: number
+  member_count: number
+  category: string
+  gamemodes?: string[]
+  supported_versions?: string[]
+  uptime?: number
+  country?: string
   created_at: string
 }
 
