@@ -94,23 +94,26 @@ export function HomePage() {
       <div className="space-y-4">
         {/* Top Banner Row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="bg-gradient-to-r from-red-600 to-red-700 rounded-lg p-4 text-center">
-            <div className="text-white font-bold text-lg">KALİTENİN ADRESİ</div>
-            <div className="text-white text-sm">Banner Alanı - 728x90</div>
+          <div className="bg-gradient-to-r from-gray-700 to-gray-800 rounded-lg p-4 text-center border-2 border-dashed border-gray-500 cursor-pointer hover:border-purple-400 transition-colors">
+            <div className="text-gray-400 text-sm">Bu alana reklam vermek için TIKLA!</div>
+            <div className="text-gray-400 text-xs">CLICK HERE to advertise in this area!</div>
+            <div className="text-gray-500 text-xs mt-1">728x90</div>
           </div>
-          <div className="bg-gradient-to-r from-gray-800 to-gray-900 rounded-lg p-4 text-center">
-            <div className="text-green-400 font-bold text-lg">TRPLUGIN</div>
-            <div className="text-white text-sm">PLUGIN AL/SAT</div>
+          <div className="bg-gradient-to-r from-gray-700 to-gray-800 rounded-lg p-4 text-center border-2 border-dashed border-gray-500 cursor-pointer hover:border-purple-400 transition-colors">
+            <div className="text-gray-400 text-sm">Bu alana reklam vermek için TIKLA!</div>
+            <div className="text-gray-400 text-xs">CLICK HERE to advertise in this area!</div>
+            <div className="text-gray-500 text-xs mt-1">728x90</div>
           </div>
         </div>
 
         {/* Middle Banner Row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="bg-gradient-to-r from-orange-600 to-orange-700 rounded-lg p-4 text-center">
-            <div className="text-white font-bold text-lg">1.16.5-1.20.6 TOWNY</div>
-            <div className="text-white text-sm">MACESTIER - 7/24 OYUN KEYFİ</div>
+          <div className="bg-gradient-to-r from-gray-700 to-gray-800 rounded-lg p-4 text-center border-2 border-dashed border-gray-500 cursor-pointer hover:border-purple-400 transition-colors">
+            <div className="text-gray-400 text-sm">Bu alana reklam vermek için TIKLA!</div>
+            <div className="text-gray-400 text-xs">CLICK HERE to advertise in this area!</div>
+            <div className="text-gray-500 text-xs mt-1">728x90</div>
           </div>
-          <div className="bg-gradient-to-r from-gray-700 to-gray-800 rounded-lg p-4 text-center border-2 border-dashed border-gray-500">
+          <div className="bg-gradient-to-r from-gray-700 to-gray-800 rounded-lg p-4 text-center border-2 border-dashed border-gray-500 cursor-pointer hover:border-purple-400 transition-colors">
             <div className="text-gray-400 text-sm">Bu alana reklam vermek için TIKLA!</div>
             <div className="text-gray-400 text-xs">CLICK HERE to advertise in this area!</div>
             <div className="text-gray-500 text-xs mt-1">728x90</div>
@@ -119,12 +122,12 @@ export function HomePage() {
 
         {/* Bottom Banner Row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="bg-gradient-to-r from-gray-700 to-gray-800 rounded-lg p-4 text-center border-2 border-dashed border-gray-500">
+          <div className="bg-gradient-to-r from-gray-700 to-gray-800 rounded-lg p-4 text-center border-2 border-dashed border-gray-500 cursor-pointer hover:border-purple-400 transition-colors">
             <div className="text-gray-400 text-sm">Bu alana reklam vermek için TIKLA!</div>
             <div className="text-gray-400 text-xs">CLICK HERE to advertise in this area!</div>
             <div className="text-gray-500 text-xs mt-1">728x90</div>
           </div>
-          <div className="bg-gradient-to-r from-gray-700 to-gray-800 rounded-lg p-4 text-center border-2 border-dashed border-gray-500">
+          <div className="bg-gradient-to-r from-gray-700 to-gray-800 rounded-lg p-4 text-center border-2 border-dashed border-gray-500 cursor-pointer hover:border-purple-400 transition-colors">
             <div className="text-gray-400 text-sm">Bu alana reklam vermek için TIKLA!</div>
             <div className="text-gray-400 text-xs">CLICK HERE to advertise in this area!</div>
             <div className="text-gray-500 text-xs mt-1">728x90</div>

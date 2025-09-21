@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { 
   Users, 
   Server, 
@@ -11,10 +12,10 @@ import {
   Eye,
   DollarSign,
   Calendar,
-  TrendingUp
+  TrendingUp,
+  LogOut
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
-import { useAuth } from '../contexts/AuthContext'
 
 interface AdminStats {
   totalUsers: number
@@ -35,7 +36,7 @@ interface BannerAd {
 }
 
 export function AdminPanel() {
-  const { user } = useAuth()
+  const navigate = useNavigate()
   const [stats, setStats] = useState<AdminStats>({
     totalUsers: 0,
     totalServers: 0,
@@ -45,13 +46,24 @@ export function AdminPanel() {
   const [banners, setBanners] = useState<BannerAd[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('dashboard')
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false)
 
   useEffect(() => {
-    if (user) {
+    // Admin giriş kontrolü
+    const adminLoggedIn = localStorage.getItem('adminLoggedIn')
+    if (adminLoggedIn === 'true') {
+      setIsAdminLoggedIn(true)
       fetchStats()
       fetchBanners()
+    } else {
+      navigate('/admin/login')
     }
-  }, [user])
+  }, [navigate])
+
+  const handleLogout = () => {
+    localStorage.removeItem('adminLoggedIn')
+    navigate('/admin/login')
+  }
 
   const fetchStats = async () => {
     try {
@@ -107,6 +119,7 @@ export function AdminPanel() {
       fetchBanners()
     } catch (error) {
       console.error('Error adding banner:', error)
+      alert('Banner eklenirken hata oluştu')
     }
   }
 
@@ -154,7 +167,7 @@ export function AdminPanel() {
     { id: 'servers', label: 'Sunucular', icon: Server },
   ]
 
-  if (!user) {
+  if (!isAdminLoggedIn) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -172,6 +185,13 @@ export function AdminPanel() {
       <div className="text-center">
         <h1 className="text-4xl font-bold text-white mb-2">⚙️ Admin Paneli</h1>
         <p className="text-gray-400">Site yönetimi ve istatistikler</p>
+        <button
+          onClick={handleLogout}
+          className="mt-4 flex items-center space-x-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors mx-auto"
+        >
+          <LogOut className="h-4 w-4" />
+          <span>Çıkış Yap</span>
+        </button>
       </div>
 
       {/* Tabs */}
@@ -314,17 +334,91 @@ export function AdminPanel() {
 
       {/* Users Tab */}
       {activeTab === 'users' && (
-        <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
-          <h3 className="text-xl font-bold text-white mb-4">Kullanıcı Yönetimi</h3>
-          <p className="text-gray-400">Kullanıcı yönetimi özellikleri yakında eklenecek...</p>
+        <div className="space-y-6">
+          <div className="flex justify-between items-center">
+            <h3 className="text-xl font-bold text-white">Kullanıcı Yönetimi</h3>
+          </div>
+
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="border-b border-white/20">
+                    <th className="pb-3 text-white font-semibold">Kullanıcı Adı</th>
+                    <th className="pb-3 text-white font-semibold">E-posta</th>
+                    <th className="pb-3 text-white font-semibold">Kayıt Tarihi</th>
+                    <th className="pb-3 text-white font-semibold">Minecraft Nick</th>
+                    <th className="pb-3 text-white font-semibold">İşlemler</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {/* Burada kullanıcı listesi gelecek */}
+                  <tr className="border-b border-white/10">
+                    <td className="py-3 text-gray-300">Örnek Kullanıcı</td>
+                    <td className="py-3 text-gray-300">user@example.com</td>
+                    <td className="py-3 text-gray-300">2024-01-15</td>
+                    <td className="py-3 text-gray-300">Player123</td>
+                    <td className="py-3">
+                      <div className="flex space-x-2">
+                        <button className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm transition-colors">
+                          Şifre Değiştir
+                        </button>
+                        <button className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-sm transition-colors">
+                          Hesabı Sil
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       )}
 
       {/* Servers Tab */}
       {activeTab === 'servers' && (
-        <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
-          <h3 className="text-xl font-bold text-white mb-4">Sunucu Yönetimi</h3>
-          <p className="text-gray-400">Sunucu yönetimi özellikleri yakında eklenecek...</p>
+        <div className="space-y-6">
+          <div className="flex justify-between items-center">
+            <h3 className="text-xl font-bold text-white">Sunucu Yönetimi</h3>
+          </div>
+
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="border-b border-white/20">
+                    <th className="pb-3 text-white font-semibold">Sunucu Adı</th>
+                    <th className="pb-3 text-white font-semibold">IP Adresi</th>
+                    <th className="pb-3 text-white font-semibold">Kategori</th>
+                    <th className="pb-3 text-white font-semibold">Oy Sayısı</th>
+                    <th className="pb-3 text-white font-semibold">Oluşturulma</th>
+                    <th className="pb-3 text-white font-semibold">İşlemler</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {/* Burada sunucu listesi gelecek */}
+                  <tr className="border-b border-white/10">
+                    <td className="py-3 text-gray-300">Örnek Sunucu</td>
+                    <td className="py-3 text-gray-300">play.example.com</td>
+                    <td className="py-3 text-gray-300">Survival</td>
+                    <td className="py-3 text-gray-300">15</td>
+                    <td className="py-3 text-gray-300">2024-01-15</td>
+                    <td className="py-3">
+                      <div className="flex space-x-2">
+                        <button className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm transition-colors">
+                          Düzenle
+                        </button>
+                        <button className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-sm transition-colors">
+                          Sil
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       )}
     </div>

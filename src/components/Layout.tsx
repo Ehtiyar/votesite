@@ -70,7 +70,6 @@ export function Layout({ children }: LayoutProps) {
                   >
                     <User className="h-4 w-4" />
                     <span className="hidden sm:inline">{user.username}</span>
-                    <span className="text-gray-400">(₺0.00)</span>
                     <ChevronDown className="h-4 w-4" />
                   </button>
 
