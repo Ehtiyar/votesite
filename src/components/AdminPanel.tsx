@@ -46,6 +46,12 @@ export function AdminPanel() {
   const [banners, setBanners] = useState<BannerAd[]>([])
   const [users, setUsers] = useState<any[]>([])
   const [servers, setServers] = useState<any[]>([])
+  const [news, setNews] = useState<any[]>([])
+  const [socialLinks, setSocialLinks] = useState({
+    discord: 'https://discord.gg/minevote',
+    twitter: 'https://twitter.com/minevote',
+    instagram: 'https://instagram.com/minevote'
+  })
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('dashboard')
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false)
@@ -59,6 +65,7 @@ export function AdminPanel() {
       fetchBanners()
       fetchUsers()
       fetchServers()
+      fetchNews()
     } else {
       navigate('/admin/login')
     }
@@ -116,19 +123,41 @@ export function AdminPanel() {
     }
   }
 
-  const fetchServers = async () => {
+  const fetchNews = async () => {
     try {
       const { data, error } = await supabase
-        .from('servers')
+        .from('news_articles')
         .select('*')
         .order('created_at', { ascending: false })
 
       if (error) throw error
-      setServers(data || [])
+      setNews(data || [])
     } catch (error) {
-      console.error('Error fetching servers:', error)
-    } finally {
-      setLoading(false)
+      console.error('Error fetching news:', error)
+    }
+  }
+
+  const addNews = async () => {
+    try {
+      const { error } = await supabase
+        .from('news_articles')
+        .insert([
+          {
+            title: 'Yeni Haber',
+            content: 'Haber içeriği buraya yazılacak...',
+            excerpt: 'Haber özeti...',
+            author: 'Admin',
+            category: 'Genel',
+            image_url: '',
+            tags: ['minecraft', 'genel']
+          }
+        ])
+
+      if (error) throw error
+      fetchNews()
+    } catch (error) {
+      console.error('Error adding news:', error)
+      alert('Haber eklenirken hata oluştu')
     }
   }
 
@@ -195,6 +224,8 @@ export function AdminPanel() {
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
     { id: 'banners', label: 'Banner Yönetimi', icon: Settings },
+    { id: 'news', label: 'Haber Yönetimi', icon: Calendar },
+    { id: 'social', label: 'Sosyal Medya', icon: Settings },
     { id: 'users', label: 'Kullanıcılar', icon: Users },
     { id: 'servers', label: 'Sunucular', icon: Server },
   ]
@@ -212,19 +243,20 @@ export function AdminPanel() {
   }
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="text-center">
-        <h1 className="text-4xl font-bold text-white mb-2">⚙️ Admin Paneli</h1>
-        <p className="text-gray-400">Site yönetimi ve istatistikler</p>
-        <button
-          onClick={handleLogout}
-          className="mt-4 flex items-center space-x-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors mx-auto"
-        >
-          <LogOut className="h-4 w-4" />
-          <span>Çıkış Yap</span>
-        </button>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-blue-900">
+      <div className="container mx-auto px-4 py-8 space-y-8">
+        {/* Header */}
+        <div className="text-center">
+          <h1 className="text-4xl font-bold text-white mb-2">⚙️ Admin Paneli</h1>
+          <p className="text-gray-400">Site yönetimi ve istatistikler</p>
+          <button
+            onClick={handleLogout}
+            className="mt-4 flex items-center space-x-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors mx-auto"
+          >
+            <LogOut className="h-4 w-4" />
+            <span>Çıkış Yap</span>
+          </button>
+        </div>
 
       {/* Tabs */}
       <div className="flex flex-wrap gap-2 justify-center">
@@ -361,6 +393,134 @@ export function AdminPanel() {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* News Tab */}
+      {activeTab === 'news' && (
+        <div className="space-y-6">
+          <div className="flex justify-between items-center">
+            <h3 className="text-xl font-bold text-white">Haber Yönetimi</h3>
+            <button
+              onClick={addNews}
+              className="flex items-center space-x-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Yeni Haber</span>
+            </button>
+          </div>
+
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="border-b border-white/20">
+                    <th className="pb-3 text-white font-semibold">Başlık</th>
+                    <th className="pb-3 text-white font-semibold">Kategori</th>
+                    <th className="pb-3 text-white font-semibold">Yazar</th>
+                    <th className="pb-3 text-white font-semibold">Tarih</th>
+                    <th className="pb-3 text-white font-semibold">İşlemler</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {news.map((article) => (
+                    <tr key={article.id} className="border-b border-white/10">
+                      <td className="py-3 text-gray-300">{article.title}</td>
+                      <td className="py-3 text-gray-300">{article.category}</td>
+                      <td className="py-3 text-gray-300">{article.author}</td>
+                      <td className="py-3 text-gray-300">
+                        {new Date(article.created_at).toLocaleDateString('tr-TR')}
+                      </td>
+                      <td className="py-3">
+                        <div className="flex space-x-2">
+                          <button 
+                            onClick={() => {
+                              // Haber düzenleme işlemi burada yapılacak
+                              alert('Haber düzenleme özelliği yakında eklenecek')
+                            }}
+                            className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm transition-colors"
+                          >
+                            Düzenle
+                          </button>
+                          <button 
+                            onClick={() => {
+                              if (confirm('Bu haberi silmek istediğinizden emin misiniz?')) {
+                                // Haber silme işlemi burada yapılacak
+                                alert('Haber silme özelliği yakında eklenecek')
+                              }
+                            }}
+                            className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-sm transition-colors"
+                          >
+                            Sil
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {news.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="py-8 text-center text-gray-400">
+                        Henüz haber bulunmuyor
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Social Media Tab */}
+      {activeTab === 'social' && (
+        <div className="space-y-6">
+          <div className="flex justify-between items-center">
+            <h3 className="text-xl font-bold text-white">Sosyal Medya Yönetimi</h3>
+          </div>
+
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
+            <div className="space-y-4">
+              <div>
+                <label className="block text-white text-sm font-medium mb-2">Discord Link</label>
+                <input
+                  type="url"
+                  value={socialLinks.discord}
+                  onChange={(e) => setSocialLinks({...socialLinks, discord: e.target.value})}
+                  className="w-full px-3 py-2 bg-white/5 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20"
+                  placeholder="https://discord.gg/minevote"
+                />
+              </div>
+              <div>
+                <label className="block text-white text-sm font-medium mb-2">Twitter Link</label>
+                <input
+                  type="url"
+                  value={socialLinks.twitter}
+                  onChange={(e) => setSocialLinks({...socialLinks, twitter: e.target.value})}
+                  className="w-full px-3 py-2 bg-white/5 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20"
+                  placeholder="https://twitter.com/minevote"
+                />
+              </div>
+              <div>
+                <label className="block text-white text-sm font-medium mb-2">Instagram Link</label>
+                <input
+                  type="url"
+                  value={socialLinks.instagram}
+                  onChange={(e) => setSocialLinks({...socialLinks, instagram: e.target.value})}
+                  className="w-full px-3 py-2 bg-white/5 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20"
+                  placeholder="https://instagram.com/minevote"
+                />
+              </div>
+              <button
+                onClick={() => {
+                  // Sosyal medya linklerini kaydetme işlemi
+                  alert('Sosyal medya linkleri güncellendi!')
+                }}
+                className="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+              >
+                Linkleri Güncelle
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

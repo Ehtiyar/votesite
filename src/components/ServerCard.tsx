@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Heart, Users, Calendar, Award, ExternalLink, Wifi, WifiOff, Server } from 'lucide-react'
 import { supabase } from '../lib/supabase'
@@ -9,14 +9,14 @@ import type { MinecraftServer } from '../types'
 interface ServerCardProps {
   server: MinecraftServer
   rank?: number
-  onVoteSuccess?: () => void
+  onFavoriteSuccess?: () => void
 }
 
-export function ServerCard({ server, rank, onVoteSuccess }: ServerCardProps) {
+export function ServerCard({ server, rank, onFavoriteSuccess }: ServerCardProps) {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const [isVoting, setIsVoting] = useState(false)
-  const [hasVoted, setHasVoted] = useState(false)
+  const [isFavoriting, setIsFavoriting] = useState(false)
+  const [isFavorited, setIsFavorited] = useState(false)
   const [logoError, setLogoError] = useState(false)
   
   // Server status hook'u kullan
@@ -29,146 +29,139 @@ export function ServerCard({ server, rank, onVoteSuccess }: ServerCardProps) {
     return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`
   }
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (user) {
-      checkUserVote()
+      checkUserFavorite()
     }
   }, [user, server.id])
 
-  const checkUserVote = async () => {
+  const checkUserFavorite = async () => {
     if (!user) return
 
     try {
       const { data, error } = await supabase
-        .from('votes')
+        .from('user_favorites')
         .select('id')
         .eq('user_id', user.id)
         .eq('server_id', server.id)
         .single()
 
       if (!error && data) {
-        setHasVoted(true)
+        setIsFavorited(true)
       }
     } catch (error) {
-      // User hasn't voted for this server
-      setHasVoted(false)
+      // Kullanıcı henüz favoriye eklememiş
+      setIsFavorited(false)
     }
   }
 
-  const handleVote = async (e: React.MouseEvent) => {
-    e.stopPropagation() // Prevent card click when voting
-    
+  const handleFavorite = async () => {
     if (!user) {
-      alert('Please log in to vote for servers!')
+      alert('Favorilere eklemek için giriş yapmanız gerekiyor!')
       return
     }
 
-    if (hasVoted) {
-      alert('You have already voted for this server!')
-      return
-    }
-
-    setIsVoting(true)
-
+    setIsFavoriting(true)
     try {
-      // Add vote
-      const { error: voteError } = await supabase
-        .from('votes')
-        .insert([
-          {
-            user_id: user.id,
-            server_id: server.id,
-          }
-        ])
+      if (isFavorited) {
+        // Remove from favorites
+        const { error } = await supabase
+          .from('user_favorites')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('server_id', server.id)
 
-      if (voteError) throw voteError
+        if (error) throw error
+        setIsFavorited(false)
+      } else {
+        // Add to favorites
+        const { error } = await supabase
+          .from('user_favorites')
+          .insert([
+            {
+              user_id: user.id,
+              server_id: server.id
+            }
+          ])
 
-      // Update server vote count
-      const { error: updateError } = await supabase
-        .from('servers')
-        .update({ member_count: server.member_count + 1 })
-        .eq('id', server.id)
-
-      if (updateError) throw updateError
-
-      setHasVoted(true)
-      if (onVoteSuccess) {
-        onVoteSuccess()
+        if (error) throw error
+        setIsFavorited(true)
+      }
+      
+      if (onFavoriteSuccess) {
+        onFavoriteSuccess()
       }
     } catch (error) {
-      console.error('Error voting for server:', error)
-      alert('Failed to vote for server. Please try again.')
+      console.error('Error updating favorites:', error)
+      alert('Favori işlemi sırasında hata oluştu!')
     } finally {
-      setIsVoting(false)
+      setIsFavoriting(false)
     }
   }
 
-  const copyServerIP = (e: React.MouseEvent) => {
-    e.stopPropagation() // Prevent card click when copying IP
+  const copyServerIP = () => {
     navigator.clipboard.writeText(server.invite_link)
     alert('Server IP copied to clipboard!')
   }
 
-  const handleCardClick = () => {
-    navigate(`/server/${server.id}`)
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('tr-TR', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    })
   }
 
   return (
-    <div 
-      className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20 hover:border-purple-400/50 transition-all duration-300 hover:transform hover:scale-105 cursor-pointer"
-      onClick={handleCardClick}
-    >
+    <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20 hover:border-purple-400/50 transition-all duration-300 group">
+      {/* Rank Badge */}
+      {rank && (
+        <div className="absolute -top-2 -left-2 w-8 h-8 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center text-black font-bold text-sm">
+          #{rank}
+        </div>
+      )}
+
+      {/* Server Header */}
       <div className="flex items-start justify-between mb-4">
-        <div className="flex-1">
-          <div className="flex items-center space-x-3 mb-2">
-            {/* Server Logo */}
-            <div className="flex-shrink-0">
-              {!logoError ? (
-                <img
-                  src={getFaviconUrl(server.invite_link)}
-                  alt={`${server.name} logo`}
-                  className="w-12 h-12 rounded-lg border border-white/20"
-                  onError={() => setLogoError(true)}
-                />
-              ) : (
-                <div className="w-12 h-12 rounded-lg border border-white/20 bg-purple-600/20 flex items-center justify-center">
-                  <Server className="h-6 w-6 text-purple-400" />
-                </div>
-              )}
-            </div>
-            
-            <div className="flex-1">
-              <div className="flex items-center space-x-2">
-                <h3 className="text-xl font-bold text-white">{server.name}</h3>
-                {rank && (
-                  <span className={`px-2 py-1 rounded-full text-xs font-bold ${
-                    rank === 1 ? 'bg-yellow-500 text-black' :
-                    rank === 2 ? 'bg-gray-400 text-black' :
-                    rank === 3 ? 'bg-orange-500 text-white' :
-                    'bg-purple-600 text-white'
-                  }`}>
-                    #{rank}
-                  </span>
-                )}
+        <div className="flex items-center space-x-3">
+          {/* Server Logo */}
+          <div className="flex-shrink-0">
+            {!logoError ? (
+              <img
+                src={getFaviconUrl(server.invite_link)}
+                alt={`${server.name} logo`}
+                className="w-12 h-12 rounded-lg border border-white/20"
+                onError={() => setLogoError(true)}
+              />
+            ) : (
+              <div className="w-12 h-12 rounded-lg border border-white/20 bg-purple-600/20 flex items-center justify-center">
+                <Server className="h-6 w-6 text-purple-400" />
               </div>
-            </div>
+            )}
           </div>
           
-          <button
-            onClick={copyServerIP}
-            className="text-purple-400 hover:text-purple-300 text-sm font-mono flex items-center space-x-1 transition-colors"
-          >
-            <span>{server.invite_link}</span>
-            <ExternalLink className="h-3 w-3" />
-          </button>
+          <div className="flex-1">
+            <h3 className="text-xl font-bold text-white group-hover:text-purple-300 transition-colors">
+              {server.name}
+            </h3>
+            <button
+              onClick={copyServerIP}
+              className="text-purple-400 hover:text-purple-300 text-sm font-mono flex items-center space-x-1 transition-colors"
+            >
+              <span>{server.invite_link}</span>
+              <ExternalLink className="h-3 w-3" />
+            </button>
+          </div>
         </div>
+
+        {/* Member Count */}
         <div className="flex items-center space-x-1 text-yellow-400">
           <Award className="h-4 w-4" />
           <span className="font-bold">{server.member_count || 0}</span>
         </div>
       </div>
 
-      {/* Online Status */}
+      {/* Server Status */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center space-x-2">
           {statusLoading ? (
@@ -198,8 +191,12 @@ export function ServerCard({ server, rank, onVoteSuccess }: ServerCardProps) {
         )}
       </div>
 
-      <p className="text-gray-300 text-sm mb-4 line-clamp-3">{server.description}</p>
+      {/* Server Description */}
+      <p className="text-gray-300 text-sm mb-4 line-clamp-3">
+        {server.description}
+      </p>
 
+      {/* Server Info */}
       <div className="flex items-center justify-between text-sm text-gray-400 mb-4">
         <div className="flex items-center space-x-4">
           <span className="bg-blue-600 px-2 py-1 rounded text-white text-xs">
@@ -207,27 +204,38 @@ export function ServerCard({ server, rank, onVoteSuccess }: ServerCardProps) {
           </span>
           <div className="flex items-center space-x-1">
             <Calendar className="h-3 w-3" />
-            <span>{new Date(server.created_at).toLocaleDateString()}</span>
+            <span>{formatDate(server.created_at)}</span>
           </div>
         </div>
       </div>
 
-      <button
-        onClick={handleVote}
-        disabled={isVoting || hasVoted}
-        className={`w-full flex items-center justify-center space-x-2 py-3 px-4 rounded-lg font-semibold transition-all ${
-          hasVoted
-            ? 'bg-green-600 text-white cursor-not-allowed'
-            : isVoting
-            ? 'bg-gray-600 text-white cursor-not-allowed'
-            : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white transform hover:scale-105'
-        }`}
-      >
-        <Heart className={`h-4 w-4 ${hasVoted ? 'fill-current' : ''}`} />
-        <span>
-          {hasVoted ? 'Voted!' : isVoting ? 'Voting...' : 'Vote'}
-        </span>
-      </button>
+      {/* Action Buttons */}
+      <div className="flex space-x-2">
+        <button
+          onClick={() => navigate(`/server/${server.id}`)}
+          className="flex-1 flex items-center justify-center space-x-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm"
+        >
+          <span>Detayları Gör</span>
+        </button>
+        <button
+          onClick={handleFavorite}
+          disabled={isFavoriting}
+          className={`px-3 py-2 rounded-lg transition-colors ${
+            isFavorited
+              ? 'bg-red-600 hover:bg-red-700 text-white'
+              : 'bg-gray-600 hover:bg-gray-700 text-white'
+          } disabled:opacity-50`}
+        >
+          <Heart className={`h-3 w-3 ${isFavorited ? 'fill-current' : ''}`} />
+        </button>
+      </div>
+
+      {/* Favorite Status */}
+      {isFavorited && (
+        <div className="mt-2 text-center">
+          <span className="text-xs text-red-400 font-medium">❤️ Favorilere eklendi</span>
+        </div>
+      )}
     </div>
   )
 }
