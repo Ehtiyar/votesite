@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Heart, Users, Calendar, Award, ExternalLink, Wifi, WifiOff, Server } from 'lucide-react'
+import { Heart, Calendar, Award, ExternalLink, Wifi, WifiOff, Server } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { useServerStatus } from '../hooks/useServerStatus'
@@ -192,7 +192,11 @@ export function ServerCard({ server, rank, onFavoriteSuccess }: ServerCardProps)
       </div>
 
       {/* Server Description */}
-      <p className="text-gray-300 text-sm mb-4 line-clamp-3">
+      <p className="text-gray-300 text-sm mb-4 overflow-hidden" style={{
+        display: '-webkit-box',
+        WebkitLineClamp: 3,
+        WebkitBoxOrient: 'vertical'
+      }}>
         {server.description}
       </p>
 

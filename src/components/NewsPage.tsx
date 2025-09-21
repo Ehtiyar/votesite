@@ -176,7 +176,11 @@ export function NewsPage() {
                 <h3 className="text-lg font-bold text-white mb-3">
                   {article.title}
                 </h3>
-                <p className="text-gray-300 text-sm mb-4 line-clamp-3">
+                <p className="text-gray-300 text-sm mb-4 overflow-hidden" style={{
+                  display: '-webkit-box',
+                  WebkitLineClamp: 3,
+                  WebkitBoxOrient: 'vertical'
+                }}>
                   {article.excerpt}
                 </p>
                 

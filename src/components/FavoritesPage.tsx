@@ -227,7 +227,11 @@ function FavoriteServerCard({ server, onRemove, onCopyIP }: {
         )}
       </div>
 
-      <p className="text-gray-300 text-sm mb-4 line-clamp-3">{server.description}</p>
+      <p className="text-gray-300 text-sm mb-4 overflow-hidden" style={{
+        display: '-webkit-box',
+        WebkitLineClamp: 3,
+        WebkitBoxOrient: 'vertical'
+      }}>{server.description}</p>
 
       <div className="flex items-center justify-between text-sm text-gray-400 mb-4">
         <div className="flex items-center space-x-4">

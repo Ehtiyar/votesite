@@ -22,6 +22,7 @@ import {
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { useServerStatus } from '../hooks/useServerStatus'
+import { sendVotifierVote } from '../lib/votifier'
 import type { MinecraftServer } from '../types'
 
 export function ServerDetailPage() {
@@ -34,6 +35,8 @@ export function ServerDetailPage() {
   const [hasVoted, setHasVoted] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [logoError, setLogoError] = useState(false)
+  const [minecraftUsername, setMinecraftUsername] = useState('')
+  const [showUsernameModal, setShowUsernameModal] = useState(false)
 
   // Server status hook'u kullan
   const { status, loading: statusLoading } = useServerStatus(
@@ -104,18 +107,31 @@ export function ServerDetailPage() {
 
   const handleVote = async () => {
     if (!user) {
-      alert('Please log in to vote for servers!')
+      alert('Oy verebilmek için giriş yapmanız gerekiyor!')
       return
     }
 
     if (!server) return
 
     if (hasVoted) {
-      alert('You have already voted for this server!')
+      alert('Bu sunucuya zaten oy verdiniz!')
       return
     }
 
+    // Minecraft kullanıcı adı modalını göster
+    setShowUsernameModal(true)
+  }
+
+  const handleVoteWithUsername = async () => {
+    if (!minecraftUsername.trim()) {
+      alert('Minecraft kullanıcı adınızı girin!')
+      return
+    }
+
+    if (!user || !server) return
+
     setIsVoting(true)
+    setShowUsernameModal(false)
 
     try {
       // Add vote
@@ -138,11 +154,35 @@ export function ServerDetailPage() {
 
       if (updateError) throw updateError
 
+      // Votifier ile Minecraft sunucusuna hediye gönder
+      if (server.votifier_key && server.votifier_port) {
+        try {
+          const votifierResponse = await sendVotifierVote(
+            server.votifier_key,
+            server.invite_link.split(':')[0], // IP adresini al
+            server.votifier_port,
+            minecraftUsername.trim()
+          )
+
+          if (votifierResponse.status === 'ok') {
+            alert('Oy başarıyla verildi! Minecraft sunucusunda hediyenizi alabilirsiniz.')
+          } else {
+            console.warn('Votifier error:', votifierResponse.error)
+            alert('Oy verildi ancak Minecraft sunucusuna hediye gönderilemedi. Sunucu sahibi ile iletişime geçin.')
+          }
+        } catch (votifierError) {
+          console.error('Votifier error:', votifierError)
+          alert('Oy verildi ancak Minecraft sunucusuna hediye gönderilemedi. Sunucu sahibi ile iletişime geçin.')
+        }
+      } else {
+        alert('Oy başarıyla verildi!')
+      }
+
       setHasVoted(true)
       setServer(prev => prev ? { ...prev, member_count: prev.member_count + 1 } : null)
     } catch (error) {
       console.error('Error voting for server:', error)
-      alert('Failed to vote for server. Please try again.')
+      alert('Oy verirken hata oluştu. Lütfen tekrar deneyin.')
     } finally {
       setIsVoting(false)
     }
@@ -412,6 +452,49 @@ export function ServerDetailPage() {
                   {version}
                 </span>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Minecraft Username Modal */}
+        {showUsernameModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-gray-800 rounded-xl p-8 max-w-md w-full mx-4 border border-white/20">
+              <h3 className="text-xl font-bold text-white mb-4">Minecraft Kullanıcı Adınız</h3>
+              <p className="text-gray-400 mb-6">
+                Oy verdikten sonra Minecraft sunucusunda hediyenizi alabilmek için kullanıcı adınızı girin.
+              </p>
+              
+              <div className="mb-6">
+                <label htmlFor="minecraft-username" className="block text-white text-sm font-medium mb-2">
+                  Minecraft Kullanıcı Adı
+                </label>
+                <input
+                  type="text"
+                  id="minecraft-username"
+                  value={minecraftUsername}
+                  onChange={(e) => setMinecraftUsername(e.target.value)}
+                  className="w-full px-3 py-2 bg-white/5 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20"
+                  placeholder="Minecraft kullanıcı adınız"
+                  autoFocus
+                />
+              </div>
+
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => setShowUsernameModal(false)}
+                  className="flex-1 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
+                >
+                  İptal
+                </button>
+                <button
+                  onClick={handleVoteWithUsername}
+                  disabled={isVoting}
+                  className="flex-1 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                >
+                  {isVoting ? 'Oy Veriliyor...' : 'Oy Ver'}
+                </button>
+              </div>
             </div>
           </div>
         )}

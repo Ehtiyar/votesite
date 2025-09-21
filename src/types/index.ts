@@ -2,6 +2,8 @@ export interface User {
   id: string
   email: string
   username: string
+  minecraft_nick?: string
+  discord_username?: string
   created_at: string
 }
 
@@ -45,6 +47,7 @@ export interface NewsArticle {
   author: string
   category: string
   image_url?: string
+  tags?: string[]
   created_at: string
 }
 
@@ -52,8 +55,8 @@ export interface BannerAd {
   id: string
   title: string
   description: string
-  image_url: string
-  link_url: string
+  image_url?: string
+  link_url?: string
   position: string
   is_active: boolean
   created_at: string

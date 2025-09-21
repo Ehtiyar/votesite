@@ -65,14 +65,13 @@ export function AddServerPage() {
             votifier_key: formData.votifier_key,
             votifier_port: formData.votifier_port,
             server_port: formData.server_port,
-            website_url: formData.website_url,
-            discord_url: formData.discord_url,
+            website_link: formData.website_url,
+            discord_link: formData.discord_url,
             banner_url: formData.banner_url,
-            tags: formData.tags,
-            versions: formData.versions,
-            launcher_type: formData.launcher_type,
+            gamemodes: formData.tags,
+            supported_versions: formData.versions,
             vote_count: 0,
-            created_by: user.id
+            owner_id: user.id
           }
         ])
 
@@ -554,7 +553,7 @@ export function AddServerPage() {
           <div className="flex items-center justify-end space-x-4">
             <button
               type="button"
-              onClick={() => onPageChange('home')}
+              onClick={() => navigate('/')}
               className="px-6 py-3 text-white hover:text-gray-300 transition-colors"
             >
               Cancel
