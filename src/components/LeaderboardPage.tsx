@@ -17,9 +17,9 @@ export function LeaderboardPage() {
   const fetchServers = async () => {
     try {
       const { data, error } = await supabase
-        .from('minecraft_servers')
+        .from('servers')
         .select('*')
-        .order('vote_count', { ascending: false })
+        .order('member_count', { ascending: false })
 
       if (error) throw error
       setServers(data || [])

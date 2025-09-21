@@ -1,6 +1,6 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Server, Trophy, Home, Plus, Info, LogOut, User } from 'lucide-react'
+import { Server, Trophy, Home, Info, LogOut, User, Settings, Plus, Heart, ChevronDown } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 
 interface LayoutProps {
@@ -10,6 +10,7 @@ interface LayoutProps {
 export function Layout({ children }: LayoutProps) {
   const { user, signOut } = useAuth()
   const location = useLocation()
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
 
   const handleSignOut = async () => {
     try {
@@ -22,7 +23,7 @@ export function Layout({ children }: LayoutProps) {
   const navItems = [
     { id: 'home', label: 'Home', icon: Home, path: '/' },
     { id: 'leaderboard', label: 'Leaderboard', icon: Trophy, path: '/leaderboard' },
-    ...(user ? [{ id: 'add-server', label: 'Add Server', icon: Plus, path: '/add-server' }] : []),
+    { id: 'news', label: 'News', icon: Info, path: '/news' },
     { id: 'about', label: 'About', icon: Info, path: '/about' },
   ]
 
@@ -62,18 +63,74 @@ export function Layout({ children }: LayoutProps) {
 
             <div className="flex items-center space-x-4">
               {user ? (
-                <div className="flex items-center space-x-3">
-                  <div className="flex items-center space-x-2 text-white">
+                <div className="relative">
+                  <button
+                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                    className="flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/10 rounded-lg transition-colors"
+                  >
                     <User className="h-4 w-4" />
                     <span className="hidden sm:inline">{user.username}</span>
-                  </div>
-                  <button
-                    onClick={handleSignOut}
-                    className="flex items-center space-x-2 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
-                  >
-                    <LogOut className="h-4 w-4" />
-                    <span className="hidden sm:inline">Sign Out</span>
+                    <span className="text-gray-400">(₺0.00)</span>
+                    <ChevronDown className="h-4 w-4" />
                   </button>
+
+                  {isDropdownOpen && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                      <div className="py-1">
+                        <Link
+                          to="/profile"
+                          className="flex items-center space-x-2 px-4 py-2 text-gray-700 hover:bg-gray-100"
+                          onClick={() => setIsDropdownOpen(false)}
+                        >
+                          <User className="h-4 w-4" />
+                          <span>Hesabım</span>
+                        </Link>
+                        <Link
+                          to="/add-server"
+                          className="flex items-center space-x-2 px-4 py-2 text-gray-700 hover:bg-gray-100"
+                          onClick={() => setIsDropdownOpen(false)}
+                        >
+                          <Plus className="h-4 w-4" />
+                          <span>Sunucu Ekle</span>
+                        </Link>
+                        <Link
+                          to="/my-servers"
+                          className="flex items-center space-x-2 px-4 py-2 text-gray-700 hover:bg-gray-100"
+                          onClick={() => setIsDropdownOpen(false)}
+                        >
+                          <Server className="h-4 w-4" />
+                          <span>Sunucularım</span>
+                        </Link>
+                        <Link
+                          to="/change-password"
+                          className="flex items-center space-x-2 px-4 py-2 text-gray-700 hover:bg-gray-100"
+                          onClick={() => setIsDropdownOpen(false)}
+                        >
+                          <Settings className="h-4 w-4" />
+                          <span>Şifre Değiştir</span>
+                        </Link>
+                        <Link
+                          to="/favorites"
+                          className="flex items-center space-x-2 px-4 py-2 text-gray-700 hover:bg-gray-100"
+                          onClick={() => setIsDropdownOpen(false)}
+                        >
+                          <Heart className="h-4 w-4" />
+                          <span>Beğendiklerim</span>
+                        </Link>
+                        <hr className="my-1" />
+                        <button
+                          onClick={() => {
+                            handleSignOut()
+                            setIsDropdownOpen(false)
+                          }}
+                          className="flex items-center space-x-2 px-4 py-2 text-red-600 hover:bg-red-50 w-full text-left"
+                        >
+                          <LogOut className="h-4 w-4" />
+                          <span>Çıkış Yap</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="flex items-center space-x-2">
