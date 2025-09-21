@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Heart, Users, Calendar, Award, ExternalLink, Wifi, WifiOff } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
@@ -12,6 +13,7 @@ interface ServerCardProps {
 }
 
 export function ServerCard({ server, rank, onVoteSuccess }: ServerCardProps) {
+  const navigate = useNavigate()
   const { user } = useAuth()
   const [isVoting, setIsVoting] = useState(false)
   const [hasVoted, setHasVoted] = useState(false)
@@ -45,7 +47,9 @@ export function ServerCard({ server, rank, onVoteSuccess }: ServerCardProps) {
     }
   }
 
-  const handleVote = async () => {
+  const handleVote = async (e: React.MouseEvent) => {
+    e.stopPropagation() // Prevent card click when voting
+    
     if (!user) {
       alert('Please log in to vote for servers!')
       return
@@ -91,13 +95,21 @@ export function ServerCard({ server, rank, onVoteSuccess }: ServerCardProps) {
     }
   }
 
-  const copyServerIP = () => {
+  const copyServerIP = (e: React.MouseEvent) => {
+    e.stopPropagation() // Prevent card click when copying IP
     navigator.clipboard.writeText(server.invite_link)
     alert('Server IP copied to clipboard!')
   }
 
+  const handleCardClick = () => {
+    navigate(`/server/${server.id}`)
+  }
+
   return (
-    <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20 hover:border-purple-400/50 transition-all duration-300 hover:transform hover:scale-105">
+    <div 
+      className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20 hover:border-purple-400/50 transition-all duration-300 hover:transform hover:scale-105 cursor-pointer"
+      onClick={handleCardClick}
+    >
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
           <div className="flex items-center space-x-2 mb-2">
