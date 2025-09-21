@@ -1,13 +1,11 @@
 import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Server, Globe, GamepadIcon, FileText, Key, Hash, Plus, Upload, Link, Monitor, Plug, Tag, Info } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 
-interface AddServerPageProps {
-  onPageChange: (page: string) => void
-}
-
-export function AddServerPage({ onPageChange }: AddServerPageProps) {
+export function AddServerPage() {
+  const navigate = useNavigate()
   const { user } = useAuth()
   const [formData, setFormData] = useState({
     name: '',
@@ -81,7 +79,7 @@ export function AddServerPage({ onPageChange }: AddServerPageProps) {
       if (error) throw error
 
       alert('Server added successfully!')
-      onPageChange('home')
+      navigate('/')
     } catch (error: any) {
       setError(error.message || 'Failed to add server')
     } finally {
@@ -155,7 +153,7 @@ export function AddServerPage({ onPageChange }: AddServerPageProps) {
         <h2 className="text-2xl font-bold text-white mb-2">Login Required</h2>
         <p className="text-gray-400 mb-6">You need to be logged in to add a server.</p>
         <button
-          onClick={() => onPageChange('login')}
+          onClick={() => navigate('/login')}
           className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
         >
           Login Now
