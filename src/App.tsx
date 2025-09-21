@@ -8,6 +8,8 @@ import { AddServerPage } from './components/AddServerPage'
 import { LeaderboardPage } from './components/LeaderboardPage'
 import { AboutPage } from './components/AboutPage'
 import { ServerDetailPage } from './components/ServerDetailPage'
+import { NewsPage } from './components/NewsPage'
+import { AdminPanel } from './components/AdminPanel'
 
 function App() {
   return (
@@ -20,8 +22,10 @@ function App() {
             <Route path="/register" element={<AuthPages type="register" />} />
             <Route path="/add-server" element={<AddServerPage />} />
             <Route path="/leaderboard" element={<LeaderboardPage />} />
+            <Route path="/news" element={<NewsPage />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/server/:id" element={<ServerDetailPage />} />
+            <Route path="/admin" element={<AdminPanel />} />
           </Routes>
         </Layout>
       </Router>
