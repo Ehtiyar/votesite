@@ -16,7 +16,8 @@ import {
   Shield,
   Clock,
   MapPin,
-  Gamepad2
+  Gamepad2,
+  Server
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
@@ -32,12 +33,20 @@ export function ServerDetailPage() {
   const [isVoting, setIsVoting] = useState(false)
   const [hasVoted, setHasVoted] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [logoError, setLogoError] = useState(false)
 
   // Server status hook'u kullan
   const { status, loading: statusLoading } = useServerStatus(
     server?.invite_link || '', 
     server?.server_port || 25565
   )
+
+  // Favicon URL oluştur
+  const getFaviconUrl = (ip: string) => {
+    // IP'den domain çıkar (port varsa kaldır)
+    const domain = ip.split(':')[0]
+    return `https://www.google.com/s2/favicons?domain=${domain}&sz=128`
+  }
 
   useEffect(() => {
     if (id) {
@@ -215,10 +224,30 @@ export function ServerDetailPage() {
           <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
             <div className="flex-1">
               <div className="flex items-center space-x-4 mb-4">
-                <h1 className="text-4xl font-bold text-white">{server.name}</h1>
-                <div className="flex items-center space-x-1 text-yellow-400">
-                  <Award className="h-6 w-6" />
-                  <span className="text-xl font-bold">{server.member_count || 0}</span>
+                {/* Server Logo */}
+                <div className="flex-shrink-0">
+                  {!logoError ? (
+                    <img
+                      src={getFaviconUrl(server.invite_link)}
+                      alt={`${server.name} logo`}
+                      className="w-16 h-16 rounded-xl border border-white/20"
+                      onError={() => setLogoError(true)}
+                    />
+                  ) : (
+                    <div className="w-16 h-16 rounded-xl border border-white/20 bg-purple-600/20 flex items-center justify-center">
+                      <Server className="h-8 w-8 text-purple-400" />
+                    </div>
+                  )}
+                </div>
+                
+                <div className="flex-1">
+                  <div className="flex items-center space-x-4">
+                    <h1 className="text-4xl font-bold text-white">{server.name}</h1>
+                    <div className="flex items-center space-x-1 text-yellow-400">
+                      <Award className="h-6 w-6" />
+                      <span className="text-xl font-bold">{server.member_count || 0}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
 

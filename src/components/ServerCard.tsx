@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Heart, Users, Calendar, Award, ExternalLink, Wifi, WifiOff } from 'lucide-react'
+import { Heart, Users, Calendar, Award, ExternalLink, Wifi, WifiOff, Server } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { useServerStatus } from '../hooks/useServerStatus'
@@ -17,9 +17,17 @@ export function ServerCard({ server, rank, onVoteSuccess }: ServerCardProps) {
   const { user } = useAuth()
   const [isVoting, setIsVoting] = useState(false)
   const [hasVoted, setHasVoted] = useState(false)
+  const [logoError, setLogoError] = useState(false)
   
   // Server status hook'u kullan
   const { status, loading: statusLoading } = useServerStatus(server.invite_link, server.server_port || 25565)
+
+  // Favicon URL oluştur
+  const getFaviconUrl = (ip: string) => {
+    // IP'den domain çıkar (port varsa kaldır)
+    const domain = ip.split(':')[0]
+    return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`
+  }
 
   React.useEffect(() => {
     if (user) {
@@ -112,19 +120,40 @@ export function ServerCard({ server, rank, onVoteSuccess }: ServerCardProps) {
     >
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
-          <div className="flex items-center space-x-2 mb-2">
-            <h3 className="text-xl font-bold text-white">{server.name}</h3>
-            {rank && (
-              <span className={`px-2 py-1 rounded-full text-xs font-bold ${
-                rank === 1 ? 'bg-yellow-500 text-black' :
-                rank === 2 ? 'bg-gray-400 text-black' :
-                rank === 3 ? 'bg-orange-500 text-white' :
-                'bg-purple-600 text-white'
-              }`}>
-                #{rank}
-              </span>
-            )}
+          <div className="flex items-center space-x-3 mb-2">
+            {/* Server Logo */}
+            <div className="flex-shrink-0">
+              {!logoError ? (
+                <img
+                  src={getFaviconUrl(server.invite_link)}
+                  alt={`${server.name} logo`}
+                  className="w-12 h-12 rounded-lg border border-white/20"
+                  onError={() => setLogoError(true)}
+                />
+              ) : (
+                <div className="w-12 h-12 rounded-lg border border-white/20 bg-purple-600/20 flex items-center justify-center">
+                  <Server className="h-6 w-6 text-purple-400" />
+                </div>
+              )}
+            </div>
+            
+            <div className="flex-1">
+              <div className="flex items-center space-x-2">
+                <h3 className="text-xl font-bold text-white">{server.name}</h3>
+                {rank && (
+                  <span className={`px-2 py-1 rounded-full text-xs font-bold ${
+                    rank === 1 ? 'bg-yellow-500 text-black' :
+                    rank === 2 ? 'bg-gray-400 text-black' :
+                    rank === 3 ? 'bg-orange-500 text-white' :
+                    'bg-purple-600 text-white'
+                  }`}>
+                    #{rank}
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
+          
           <button
             onClick={copyServerIP}
             className="text-purple-400 hover:text-purple-300 text-sm font-mono flex items-center space-x-1 transition-colors"
