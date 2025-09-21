@@ -37,6 +37,28 @@ export interface Vote {
   created_at: string
 }
 
+export interface NewsArticle {
+  id: string
+  title: string
+  content: string
+  excerpt: string
+  author: string
+  category: string
+  image_url?: string
+  created_at: string
+}
+
+export interface BannerAd {
+  id: string
+  title: string
+  description: string
+  image_url: string
+  link_url: string
+  position: string
+  is_active: boolean
+  created_at: string
+}
+
 export interface AuthContextType {
   user: User | null
   signUp: (email: string, password: string, username: string) => Promise<void>
