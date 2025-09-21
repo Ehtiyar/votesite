@@ -38,17 +38,75 @@ CREATE TABLE IF NOT EXISTS profiles (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 4. Servers Table (update existing)
-ALTER TABLE servers ADD COLUMN IF NOT EXISTS detailed_description TEXT;
-ALTER TABLE servers ADD COLUMN IF NOT EXISTS banner_url TEXT;
-ALTER TABLE servers ADD COLUMN IF NOT EXISTS discord_link TEXT;
-ALTER TABLE servers ADD COLUMN IF NOT EXISTS website_link TEXT;
-ALTER TABLE servers ADD COLUMN IF NOT EXISTS gamemodes TEXT[];
-ALTER TABLE servers ADD COLUMN IF NOT EXISTS supported_versions TEXT[];
-ALTER TABLE servers ADD COLUMN IF NOT EXISTS uptime INTEGER DEFAULT 99;
-ALTER TABLE servers ADD COLUMN IF NOT EXISTS country TEXT DEFAULT 'Turkey';
+-- 4. Servers Table
+CREATE TABLE IF NOT EXISTS servers (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  name TEXT NOT NULL,
+  description TEXT NOT NULL,
+  invite_link TEXT NOT NULL,
+  ip_address TEXT NOT NULL,
+  server_port INTEGER DEFAULT 25565,
+  game_version TEXT NOT NULL,
+  category TEXT NOT NULL DEFAULT 'Survival',
+  detailed_description TEXT,
+  banner_url TEXT,
+  discord_link TEXT,
+  website_link TEXT,
+  gamemodes TEXT[],
+  supported_versions TEXT[],
+  votifier_key TEXT NOT NULL,
+  votifier_port INTEGER DEFAULT 8192,
+  owner_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  vote_count INTEGER DEFAULT 0,
+  member_count INTEGER DEFAULT 0,
+  uptime INTEGER DEFAULT 99,
+  country TEXT DEFAULT 'Turkey',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
 
--- 5. User Favorites Table
+-- Servers table için RLS politikaları
+ALTER TABLE servers ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Anyone can read servers" ON servers
+  FOR SELECT USING (true);
+
+CREATE POLICY "Authenticated users can insert servers" ON servers
+  FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+
+CREATE POLICY "Users can update their own servers" ON servers
+  FOR UPDATE USING (auth.uid() = owner_id);
+
+CREATE POLICY "Users can delete their own servers" ON servers
+  FOR DELETE USING (auth.uid() = owner_id);
+
+-- Servers table için trigger
+CREATE TRIGGER update_servers_updated_at BEFORE UPDATE ON servers
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- 5. Votes Table
+CREATE TABLE IF NOT EXISTS votes (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  server_id UUID REFERENCES servers(id) ON DELETE CASCADE,
+  minecraft_username TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(user_id, server_id)
+);
+
+-- Votes table için RLS politikaları
+ALTER TABLE votes ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Anyone can read votes" ON votes
+  FOR SELECT USING (true);
+
+CREATE POLICY "Authenticated users can insert votes" ON votes
+  FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+
+CREATE POLICY "Users can view their own votes" ON votes
+  FOR SELECT USING (auth.uid() = user_id);
+
+-- 6. User Favorites Table
 CREATE TABLE IF NOT EXISTS user_favorites (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
