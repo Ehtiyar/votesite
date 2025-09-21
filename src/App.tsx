@@ -12,6 +12,9 @@ import { NewsPage } from './components/NewsPage'
 import { AdminPanel } from './components/AdminPanel'
 import { AdminLogin } from './components/AdminLogin'
 import { ProfilePage } from './components/ProfilePage'
+import { MyServersPage } from './components/MyServersPage'
+import { ChangePasswordPage } from './components/ChangePasswordPage'
+import { FavoritesPage } from './components/FavoritesPage'
 
 function App() {
   return (
@@ -32,6 +35,9 @@ function App() {
                 <Route path="/about" element={<AboutPage />} />
                 <Route path="/server/:id" element={<ServerDetailPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
+                <Route path="/my-servers" element={<MyServersPage />} />
+                <Route path="/change-password" element={<ChangePasswordPage />} />
+                <Route path="/favorites" element={<FavoritesPage />} />
               </Routes>
             </Layout>
           } />
