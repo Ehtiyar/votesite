@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Heart, Calendar, Award, ExternalLink, Wifi, WifiOff, Server, Users, Trophy } from 'lucide-react'
+import { Heart, Calendar, Award, ExternalLink, Wifi, WifiOff, Server, Users, Trophy, Star, Crown, Zap } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { useServerStatus } from '../hooks/useServerStatus'
@@ -31,6 +31,8 @@ export function ServerCard({ server, rank, onFavoriteSuccess, onVoteSuccess }: S
   const [showVoteModal, setShowVoteModal] = useState(false)
   const [topVoters, setTopVoters] = useState<TopVoter[]>([])
   const [showTopVoters, setShowTopVoters] = useState(false)
+  const [premiumFeatures, setPremiumFeatures] = useState<string[]>([])
+  const [isFeatured, setIsFeatured] = useState(false)
   
   // Server status hook'u kullan
   const { status, loading: statusLoading } = useServerStatus(server.invite_link, server.server_port || 25565)
@@ -48,6 +50,7 @@ export function ServerCard({ server, rank, onFavoriteSuccess, onVoteSuccess }: S
       checkUserVote()
     }
     fetchTopVoters()
+    fetchPremiumFeatures()
   }, [user, server.id])
 
   const checkUserVote = async () => {
@@ -96,6 +99,28 @@ export function ServerCard({ server, rank, onFavoriteSuccess, onVoteSuccess }: S
       setTopVoters(sortedVoters)
     } catch (error) {
       console.error('Error fetching top voters:', error)
+    }
+  }
+
+  const fetchPremiumFeatures = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('premium_server_features')
+        .select('feature_type, end_date')
+        .eq('server_id', server.id)
+        .eq('is_active', true)
+        .gt('end_date', new Date().toISOString())
+
+      if (error) {
+        console.error('Error fetching premium features:', error)
+        return
+      }
+
+      const features = data?.map(f => f.feature_type) || []
+      setPremiumFeatures(features)
+      setIsFeatured(features.includes('featured'))
+    } catch (error) {
+      console.error('Error fetching premium features:', error)
     }
   }
 
@@ -262,7 +287,13 @@ export function ServerCard({ server, rank, onFavoriteSuccess, onVoteSuccess }: S
   }
 
   return (
-    <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20 hover:border-purple-400/50 transition-all duration-300 group">
+    <div className={`bg-white/10 backdrop-blur-sm rounded-xl p-6 border transition-all duration-300 group ${
+      isFeatured 
+        ? 'border-yellow-400/50 hover:border-yellow-400 shadow-lg shadow-yellow-400/20' 
+        : premiumFeatures.includes('highlight')
+        ? 'border-purple-400/50 hover:border-purple-400 shadow-lg shadow-purple-400/20'
+        : 'border-white/20 hover:border-purple-400/50'
+    }`}>
       {/* Rank Badge */}
       {rank && (
         <div className="absolute -top-2 -left-2 w-8 h-8 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center text-black font-bold text-sm">
@@ -290,9 +321,23 @@ export function ServerCard({ server, rank, onFavoriteSuccess, onVoteSuccess }: S
           </div>
           
           <div className="flex-1">
-            <h3 className="text-xl font-bold text-white group-hover:text-purple-300 transition-colors">
-              {server.name}
-            </h3>
+            <div className="flex items-center space-x-2">
+              <h3 className="text-xl font-bold text-white group-hover:text-purple-300 transition-colors">
+                {server.name}
+              </h3>
+              {isFeatured && (
+                <div className="flex items-center space-x-1 bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-2 py-1 rounded-full text-xs font-bold">
+                  <Crown className="h-3 w-3" />
+                  <span>FEATURED</span>
+                </div>
+              )}
+              {premiumFeatures.includes('highlight') && (
+                <div className="flex items-center space-x-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-2 py-1 rounded-full text-xs font-bold">
+                  <Zap className="h-3 w-3" />
+                  <span>BOOSTED</span>
+                </div>
+              )}
+            </div>
             <button
               onClick={copyServerIP}
               className="text-purple-400 hover:text-purple-300 text-sm font-mono flex items-center space-x-1 transition-colors"

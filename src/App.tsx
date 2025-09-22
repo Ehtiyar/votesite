@@ -15,6 +15,8 @@ import { ProfilePage } from './components/ProfilePage'
 import { MyServersPage } from './components/MyServersPage'
 import { ChangePasswordPage } from './components/ChangePasswordPage'
 import { FavoritesPage } from './components/FavoritesPage'
+import { BoostPackagesPage } from './components/BoostPackagesPage'
+import { ServerAnalyticsPage } from './components/ServerAnalyticsPage'
 
 function App() {
   return (
@@ -38,6 +40,8 @@ function App() {
                 <Route path="/my-servers" element={<MyServersPage />} />
                 <Route path="/change-password" element={<ChangePasswordPage />} />
                 <Route path="/favorites" element={<FavoritesPage />} />
+                <Route path="/boost-packages" element={<BoostPackagesPage />} />
+                <Route path="/server-analytics/:id" element={<ServerAnalyticsPage />} />
               </Routes>
             </Layout>
           } />

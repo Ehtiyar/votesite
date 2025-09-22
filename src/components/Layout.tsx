@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Server, Trophy, Home, Info, LogOut, User, Settings, Plus, Heart, ChevronDown, MessageCircle, Twitter, Instagram } from 'lucide-react'
+import { Server, Trophy, Home, Info, LogOut, User, Settings, Plus, Heart, ChevronDown, MessageCircle, Twitter, Instagram, Zap } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 
 interface LayoutProps {
@@ -146,6 +146,14 @@ export function Layout({ children }: LayoutProps) {
                         >
                           <Heart className="h-4 w-4" />
                           <span>Beğendiklerim</span>
+                        </Link>
+                        <Link
+                          to="/boost-packages"
+                          className="flex items-center space-x-2 px-4 py-2 text-gray-700 hover:bg-gray-100"
+                          onClick={() => setIsDropdownOpen(false)}
+                        >
+                          <Zap className="h-4 w-4" />
+                          <span>Boost Paketleri</span>
                         </Link>
                         <hr className="my-1" />
                         <button

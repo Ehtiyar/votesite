@@ -65,7 +65,7 @@ export class VotifierClient {
    */
   private async sendToServer(encodedVote: string): Promise<VotifierResponse> {
     try {
-      const response = await fetch('/api/votifier', {
+      const response = await fetch('/.netlify/functions/votifier', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

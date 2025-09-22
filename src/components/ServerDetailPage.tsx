@@ -2,10 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { 
   Heart, 
-  Users, 
-  Calendar, 
   Award, 
-  ExternalLink, 
   Wifi, 
   WifiOff, 
   ArrowLeft,
@@ -14,16 +11,32 @@ import {
   MessageCircle,
   Star,
   Shield,
-  Clock,
-  MapPin,
   Gamepad2,
-  Server
+  Server,
+  ThumbsUp,
+  Edit,
+  Trash2,
+  Send
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { useServerStatus } from '../hooks/useServerStatus'
 import { sendVotifierVote } from '../lib/votifier'
 import type { MinecraftServer } from '../types'
+
+interface ServerReview {
+  id: string
+  user_id: string
+  server_id: string
+  rating: number
+  comment: string
+  is_verified: boolean
+  created_at: string
+  updated_at: string
+  profiles: {
+    username: string
+  }
+}
 
 export function ServerDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -37,6 +50,16 @@ export function ServerDetailPage() {
   const [logoError, setLogoError] = useState(false)
   const [minecraftUsername, setMinecraftUsername] = useState('')
   const [showUsernameModal, setShowUsernameModal] = useState(false)
+  
+  // Review states
+  const [reviews, setReviews] = useState<ServerReview[]>([])
+  const [averageRating, setAverageRating] = useState(0)
+  const [totalReviews, setTotalReviews] = useState(0)
+  const [showReviewModal, setShowReviewModal] = useState(false)
+  const [reviewRating, setReviewRating] = useState(5)
+  const [reviewComment, setReviewComment] = useState('')
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false)
+  const [userReview, setUserReview] = useState<ServerReview | null>(null)
 
   // Server status hook'u kullan
   const { status, loading: statusLoading } = useServerStatus(
@@ -54,12 +77,14 @@ export function ServerDetailPage() {
   useEffect(() => {
     if (id) {
       fetchServer()
+      fetchReviews()
     }
   }, [id])
 
   useEffect(() => {
     if (user && server) {
       checkUserVote()
+      checkUserReview()
     }
   }, [user, server])
 
@@ -102,6 +127,131 @@ export function ServerDetailPage() {
       }
     } catch (error) {
       setHasVoted(false)
+    }
+  }
+
+  const fetchReviews = async () => {
+    if (!server) return
+
+    try {
+      const { data, error } = await supabase
+        .from('server_reviews')
+        .select(`
+          *,
+          profiles:user_id (
+            username
+          )
+        `)
+        .eq('server_id', server.id)
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('Error fetching reviews:', error)
+        return
+      }
+
+      setReviews(data || [])
+      
+      // Calculate average rating
+      if (data && data.length > 0) {
+        const totalRating = data.reduce((sum, review) => sum + review.rating, 0)
+        setAverageRating(totalRating / data.length)
+        setTotalReviews(data.length)
+      } else {
+        setAverageRating(0)
+        setTotalReviews(0)
+      }
+    } catch (error) {
+      console.error('Error fetching reviews:', error)
+    }
+  }
+
+  const checkUserReview = async () => {
+    if (!user || !server) return
+
+    try {
+      const { data, error } = await supabase
+        .from('server_reviews')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('server_id', server.id)
+        .single()
+
+      if (!error && data) {
+        setUserReview(data)
+        setReviewRating(data.rating)
+        setReviewComment(data.comment || '')
+      }
+    } catch (error) {
+      setUserReview(null)
+    }
+  }
+
+  const handleSubmitReview = async () => {
+    if (!user || !server) return
+
+    setIsSubmittingReview(true)
+
+    try {
+      if (userReview) {
+        // Update existing review
+        const { error } = await supabase
+          .from('server_reviews')
+          .update({
+            rating: reviewRating,
+            comment: reviewComment,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', userReview.id)
+
+        if (error) throw error
+      } else {
+        // Create new review
+        const { error } = await supabase
+          .from('server_reviews')
+          .insert([{
+            user_id: user.id,
+            server_id: server.id,
+            rating: reviewRating,
+            comment: reviewComment
+          }])
+
+        if (error) throw error
+      }
+
+      setShowReviewModal(false)
+      fetchReviews()
+      checkUserReview()
+      alert('Review submitted successfully!')
+    } catch (error) {
+      console.error('Error submitting review:', error)
+      alert('Failed to submit review. Please try again.')
+    } finally {
+      setIsSubmittingReview(false)
+    }
+  }
+
+  const handleDeleteReview = async () => {
+    if (!userReview) return
+
+    if (!confirm('Are you sure you want to delete your review?')) return
+
+    try {
+      const { error } = await supabase
+        .from('server_reviews')
+        .delete()
+        .eq('id', userReview.id)
+
+      if (error) throw error
+
+      setUserReview(null)
+      setReviewRating(5)
+      setReviewComment('')
+      fetchReviews()
+      alert('Review deleted successfully!')
+    } catch (error) {
+      console.error('Error deleting review:', error)
+      alert('Failed to delete review. Please try again.')
     }
   }
 
@@ -288,6 +438,25 @@ export function ServerDetailPage() {
                       <span className="text-xl font-bold">{server.member_count || 0}</span>
                     </div>
                   </div>
+                  
+                  {/* Rating Display */}
+                  {totalReviews > 0 && (
+                    <div className="flex items-center space-x-2 mt-2">
+                      <div className="flex items-center space-x-1">
+                        {[...Array(5)].map((_, i) => (
+                          <Star
+                            key={i}
+                            className={`h-5 w-5 ${
+                              i < Math.floor(averageRating) ? 'text-yellow-400 fill-current' : 'text-gray-400'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      <span className="text-white font-medium">
+                        {averageRating.toFixed(1)} ({totalReviews} review{totalReviews !== 1 ? 's' : ''})
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -348,6 +517,16 @@ export function ServerDetailPage() {
                     {hasVoted ? 'Voted!' : isVoting ? 'Voting...' : 'Vote'}
                   </span>
                 </button>
+
+                {user && (
+                  <button
+                    onClick={() => setShowReviewModal(true)}
+                    className="flex items-center space-x-2 px-6 py-3 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg transition-colors"
+                  >
+                    <Star className="h-5 w-5" />
+                    <span>{userReview ? 'Edit Review' : 'Write Review'}</span>
+                  </button>
+                )}
 
                 {server.website_link && (
                   <button
@@ -456,6 +635,92 @@ export function ServerDetailPage() {
           </div>
         )}
 
+        {/* Reviews Section */}
+        <div className="bg-white/10 backdrop-blur-sm rounded-xl p-8 border border-white/20 mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-white flex items-center space-x-2">
+              <ThumbsUp className="h-6 w-6" />
+              <span>Reviews & Ratings</span>
+            </h2>
+            {user && (
+              <button
+                onClick={() => setShowReviewModal(true)}
+                className="flex items-center space-x-2 px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg transition-colors"
+              >
+                <Star className="h-4 w-4" />
+                <span>{userReview ? 'Edit Review' : 'Write Review'}</span>
+              </button>
+            )}
+          </div>
+
+          {totalReviews > 0 ? (
+            <div className="space-y-4">
+              {reviews.map((review) => (
+                <div key={review.id} className="bg-white/5 rounded-lg p-4 border border-white/10">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
+                        <span className="text-white text-sm font-bold">
+                          {review.profiles?.username?.charAt(0).toUpperCase() || 'U'}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="text-white font-medium">
+                          {review.profiles?.username || 'Anonymous'}
+                        </p>
+                        <div className="flex items-center space-x-1">
+                          {[...Array(5)].map((_, i) => (
+                            <Star
+                              key={i}
+                              className={`h-4 w-4 ${
+                                i < review.rating ? 'text-yellow-400 fill-current' : 'text-gray-400'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-gray-400 text-sm">
+                      {new Date(review.created_at).toLocaleDateString()}
+                    </div>
+                  </div>
+                  {review.comment && (
+                    <p className="text-gray-300 text-sm leading-relaxed">{review.comment}</p>
+                  )}
+                  {user && user.id === review.user_id && (
+                    <div className="flex space-x-2 mt-3">
+                      <button
+                        onClick={() => {
+                          setReviewRating(review.rating)
+                          setReviewComment(review.comment || '')
+                          setShowReviewModal(true)
+                        }}
+                        className="flex items-center space-x-1 px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition-colors"
+                      >
+                        <Edit className="h-3 w-3" />
+                        <span>Edit</span>
+                      </button>
+                      <button
+                        onClick={handleDeleteReview}
+                        className="flex items-center space-x-1 px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition-colors"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                        <span>Delete</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <Star className="h-12 w-12 text-gray-500 mx-auto mb-4" />
+              <p className="text-gray-400 text-lg">No reviews yet</p>
+              <p className="text-gray-500">Be the first to review this server!</p>
+            </div>
+          )}
+        </div>
+
         {/* Minecraft Username Modal */}
         {showUsernameModal && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -493,6 +758,65 @@ export function ServerDetailPage() {
                   className="flex-1 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors disabled:opacity-50"
                 >
                   {isVoting ? 'Oy Veriliyor...' : 'Oy Ver'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Review Modal */}
+        {showReviewModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-gray-800 rounded-xl p-8 max-w-md w-full mx-4 border border-white/20">
+              <h3 className="text-xl font-bold text-white mb-4">
+                {userReview ? 'Edit Review' : 'Write a Review'}
+              </h3>
+              
+              <div className="mb-6">
+                <label className="block text-white text-sm font-medium mb-2">Rating</label>
+                <div className="flex space-x-1">
+                  {[...Array(5)].map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setReviewRating(i + 1)}
+                      className={`h-8 w-8 ${
+                        i < reviewRating ? 'text-yellow-400' : 'text-gray-400'
+                      } hover:text-yellow-400 transition-colors`}
+                    >
+                      <Star className={`h-full w-full ${i < reviewRating ? 'fill-current' : ''}`} />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mb-6">
+                <label htmlFor="review-comment" className="block text-white text-sm font-medium mb-2">
+                  Comment (Optional)
+                </label>
+                <textarea
+                  id="review-comment"
+                  value={reviewComment}
+                  onChange={(e) => setReviewComment(e.target.value)}
+                  className="w-full px-3 py-2 bg-white/5 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20"
+                  placeholder="Share your experience with this server..."
+                  rows={4}
+                />
+              </div>
+
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => setShowReviewModal(false)}
+                  className="flex-1 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSubmitReview}
+                  disabled={isSubmittingReview}
+                  className="flex-1 px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center space-x-2"
+                >
+                  <Send className="h-4 w-4" />
+                  <span>{isSubmittingReview ? 'Submitting...' : 'Submit Review'}</span>
                 </button>
               </div>
             </div>

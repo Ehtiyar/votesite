@@ -115,6 +115,19 @@ CREATE TABLE IF NOT EXISTS user_favorites (
   UNIQUE(user_id, server_id)
 );
 
+-- 6.1. Server Reviews Table
+CREATE TABLE IF NOT EXISTS server_reviews (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  server_id UUID REFERENCES servers(id) ON DELETE CASCADE,
+  rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+  comment TEXT,
+  is_verified BOOLEAN DEFAULT false,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(user_id, server_id)
+);
+
 -- 6. Payment Transactions Table
 CREATE TABLE IF NOT EXISTS payment_transactions (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -137,6 +150,32 @@ CREATE TABLE IF NOT EXISTS user_balance (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- 7.1. Premium Server Features Table
+CREATE TABLE IF NOT EXISTS premium_server_features (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  server_id UUID REFERENCES servers(id) ON DELETE CASCADE,
+  feature_type TEXT NOT NULL, -- 'featured', 'banner', 'top_spot', 'highlight'
+  start_date TIMESTAMP WITH TIME ZONE NOT NULL,
+  end_date TIMESTAMP WITH TIME ZONE NOT NULL,
+  is_active BOOLEAN DEFAULT true,
+  payment_amount DECIMAL(10,2) NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 7.2. Server Boost Packages Table
+CREATE TABLE IF NOT EXISTS server_boost_packages (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  name TEXT NOT NULL,
+  description TEXT NOT NULL,
+  price DECIMAL(10,2) NOT NULL,
+  duration_days INTEGER NOT NULL,
+  features JSONB NOT NULL, -- JSON array of features
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- 8. Row Level Security (RLS) Policies
 
 -- Enable RLS
@@ -144,8 +183,11 @@ ALTER TABLE news_articles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE banner_ads ENABLE ROW LEVEL SECURITY;
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_favorites ENABLE ROW LEVEL SECURITY;
+ALTER TABLE server_reviews ENABLE ROW LEVEL SECURITY;
 ALTER TABLE payment_transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_balance ENABLE ROW LEVEL SECURITY;
+ALTER TABLE premium_server_features ENABLE ROW LEVEL SECURITY;
+ALTER TABLE server_boost_packages ENABLE ROW LEVEL SECURITY;
 
 -- News Articles Policies
 CREATE POLICY "Anyone can read news articles" ON news_articles
@@ -178,6 +220,19 @@ CREATE POLICY "Users can update their own profile" ON profiles
 CREATE POLICY "Users can manage their own favorites" ON user_favorites
   FOR ALL USING (auth.uid() = user_id);
 
+-- Server Reviews Policies
+CREATE POLICY "Anyone can read server reviews" ON server_reviews
+  FOR SELECT USING (true);
+
+CREATE POLICY "Authenticated users can insert reviews" ON server_reviews
+  FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+
+CREATE POLICY "Users can update their own reviews" ON server_reviews
+  FOR UPDATE USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own reviews" ON server_reviews
+  FOR DELETE USING (auth.uid() = user_id);
+
 -- Payment Transactions Policies
 CREATE POLICY "Users can view their own transactions" ON payment_transactions
   FOR SELECT USING (auth.uid() = user_id);
@@ -194,6 +249,29 @@ CREATE POLICY "Users can insert their own balance" ON user_balance
 
 CREATE POLICY "Users can update their own balance" ON user_balance
   FOR UPDATE USING (auth.uid() = user_id);
+
+-- Premium Server Features Policies
+CREATE POLICY "Anyone can read premium features" ON premium_server_features
+  FOR SELECT USING (true);
+
+CREATE POLICY "Authenticated users can insert premium features" ON premium_server_features
+  FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+
+CREATE POLICY "Users can update their own premium features" ON premium_server_features
+  FOR UPDATE USING (
+    EXISTS (
+      SELECT 1 FROM servers 
+      WHERE servers.id = premium_server_features.server_id 
+      AND servers.owner_id = auth.uid()
+    )
+  );
+
+-- Server Boost Packages Policies
+CREATE POLICY "Anyone can read boost packages" ON server_boost_packages
+  FOR SELECT USING (is_active = true);
+
+CREATE POLICY "Only authenticated users can manage boost packages" ON server_boost_packages
+  FOR ALL USING (auth.role() = 'authenticated');
 
 -- 9. Functions and Triggers
 
@@ -220,6 +298,15 @@ CREATE TRIGGER update_payment_transactions_updated_at BEFORE UPDATE ON payment_t
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_user_balance_updated_at BEFORE UPDATE ON user_balance
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_server_reviews_updated_at BEFORE UPDATE ON server_reviews
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_premium_server_features_updated_at BEFORE UPDATE ON premium_server_features
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_server_boost_packages_updated_at BEFORE UPDATE ON server_boost_packages
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Function to create user profile on signup
@@ -254,6 +341,14 @@ INSERT INTO banner_ads (title, description, image_url, link_url, position, is_ac
 ('KALİTENİN ADRESİ', 'En kaliteli Minecraft sunucuları', 'https://via.placeholder.com/728x90/DC2626/FFFFFF', 'https://oyna.colombus.com.tr', 'top-left', true),
 ('TRPLUGIN', 'Plugin al/sat platformu', 'https://via.placeholder.com/728x90/1F2937/10B981', 'https://trplugin.com', 'top-right', true),
 ('MACESTIER', '1.16.5-1.20.6 TOWNY sunucusu', 'https://via.placeholder.com/728x90/EA580C/FFFFFF', 'https://macestier.com', 'middle-left', true);
+
+-- Insert sample boost packages
+INSERT INTO server_boost_packages (name, description, price, duration_days, features, is_active) VALUES
+('Featured Server', 'Sunucunuzu ana sayfada öne çıkarın', 50.00, 7, '["featured_spot", "highlighted_card", "priority_listing"]', true),
+('Top Banner', 'Ana sayfada banner reklamı', 100.00, 7, '["top_banner", "high_visibility", "click_tracking"]', true),
+('Premium Boost', 'Tam premium paket', 200.00, 30, '["featured_spot", "top_banner", "highlighted_card", "priority_listing", "analytics"]', true),
+('Weekly Boost', 'Haftalık boost paketi', 75.00, 7, '["featured_spot", "highlighted_card"]', true),
+('Monthly Premium', 'Aylık premium paket', 150.00, 30, '["featured_spot", "highlighted_card", "priority_listing", "analytics"]', true);
 
 -- 11. Indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_news_articles_category ON news_articles(category);

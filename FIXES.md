@@ -127,3 +127,4 @@ Netlify dashboard'da environment variables ekleyin:
 - [ ] Email bildirimleri
 - [ ] Discord webhook entegrasyonu
 - [ ] Oy limitleri ve cooldown sistemi
+
