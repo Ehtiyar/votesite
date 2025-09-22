@@ -19,7 +19,7 @@ const AdminLogin: React.FC = () => {
 
   useEffect(() => {
     // Eğer zaten giriş yapmışsa dashboard'a yönlendir
-    const token = localStorage.getItem('admin_token')
+    const token = localStorage.getItem('admin_access_token')
     if (token) {
       navigate('/admin/dashboard')
     }

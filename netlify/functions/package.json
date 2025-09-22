@@ -1,12 +1,13 @@
 {
   "name": "netlify-functions",
   "version": "1.0.0",
-  "description": "Netlify Functions for MineVote Secure Admin Panel",
+  "description": "Netlify Functions for MineVote Server Management System",
   "main": "index.js",
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",
     "argon2": "^0.31.2",
     "jsonwebtoken": "^9.0.2",
+    "zod": "^3.22.4",
     "crypto": "^1.0.1"
   },
   "devDependencies": {

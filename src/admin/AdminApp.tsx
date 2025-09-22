@@ -1,20 +1,28 @@
 import React from 'react'
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import AdminLogin from './pages/AdminLogin'
 import AdminDashboard from './pages/AdminDashboard'
+import AdminTest from './pages/AdminTest'
+import AdminDebug from './pages/AdminDebug'
+import ErrorBoundary from './components/ErrorBoundary'
 
 const AdminApp: React.FC = () => {
+  console.log('AdminApp component loaded')
+  console.log('Current path:', window.location.pathname)
+  
   return (
-    <Router>
+    <ErrorBoundary>
       <div className="admin-app">
         <Routes>
-          <Route path="/admin/login" element={<AdminLogin />} />
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
-          <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
-          <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
+          <Route path="/debug" element={<AdminDebug />} />
+          <Route path="/test" element={<AdminTest />} />
+          <Route path="/login" element={<AdminLogin />} />
+          <Route path="/dashboard" element={<AdminDashboard />} />
+          <Route path="/" element={<Navigate to="/admin/debug" replace />} />
+          <Route path="*" element={<Navigate to="/admin/debug" replace />} />
         </Routes>
       </div>
-    </Router>
+    </ErrorBoundary>
   )
 }
 
