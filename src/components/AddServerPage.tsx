@@ -48,38 +48,77 @@ export function AddServerPage() {
     e.preventDefault()
     if (!user) return
 
+    // Validation
+    if (!formData.name.trim()) {
+      setError('Server name is required')
+      return
+    }
+    if (!formData.ip_address.trim()) {
+      setError('Server IP address is required')
+      return
+    }
+    if (!formData.description.trim()) {
+      setError('Server description is required')
+      return
+    }
+
     setLoading(true)
     setError('')
 
     try {
-      const { error } = await supabase
-        .from('servers')
-        .insert([
-          {
-            name: formData.name,
-            description: formData.description,
-            invite_link: formData.ip_address,
-            category: formData.game_version,
-            ip_address: formData.ip_address,
-            game_version: formData.game_version,
-            votifier_key: formData.votifier_key,
-            votifier_port: formData.votifier_port,
-            server_port: formData.server_port,
-            website_link: formData.website_url,
-            discord_link: formData.discord_url,
-            banner_url: formData.banner_url,
-            gamemodes: formData.tags,
-            supported_versions: formData.versions,
-            vote_count: 0,
-            owner_id: user.id
-          }
-        ])
+      // Prepare server data with only available fields
+      const serverData: any = {
+        name: formData.name.trim(),
+        description: formData.description.trim(),
+        invite_link: formData.ip_address.trim(),
+        ip_address: formData.ip_address.trim(),
+        game_version: formData.game_version || '1.20.1',
+        category: 'Survival', // Default category
+        owner_id: user.id,
+        vote_count: 0,
+        member_count: 0
+      }
 
-      if (error) throw error
+      // Add optional fields only if they exist
+      if (formData.votifier_key) {
+        serverData.votifier_key = formData.votifier_key
+      }
+      if (formData.votifier_port) {
+        serverData.votifier_port = formData.votifier_port
+      }
+      if (formData.server_port) {
+        serverData.server_port = formData.server_port
+      }
+      if (formData.website_url) {
+        serverData.website_link = formData.website_url
+      }
+      if (formData.discord_url) {
+        serverData.discord_link = formData.discord_url
+      }
+      if (formData.banner_url) {
+        serverData.banner_url = formData.banner_url
+      }
+      if (formData.tags && formData.tags.length > 0) {
+        serverData.gamemodes = formData.tags
+      }
+      if (formData.versions && formData.versions.length > 0) {
+        serverData.supported_versions = formData.versions
+      }
+
+      const { data, error } = await supabase
+        .from('servers')
+        .insert([serverData])
+        .select()
+
+      if (error) {
+        console.error('Server insert error:', error)
+        throw new Error(`Failed to add server: ${error.message}`)
+      }
 
       alert('Server added successfully!')
       navigate('/')
     } catch (error: any) {
+      console.error('Add server error:', error)
       setError(error.message || 'Failed to add server')
     } finally {
       setLoading(false)

@@ -147,14 +147,21 @@ export function ServerDetailPage() {
 
       if (error) {
         console.error('Error fetching reviews:', error)
-        return
+        // If table doesn't exist, set empty arrays
+        if (error.message.includes('relation "server_reviews" does not exist')) {
+          setReviews([])
+          setAverageRating(0)
+          setTotalReviews(0)
+          return
+        }
+        throw error
       }
 
       setReviews(data || [])
       
       // Calculate average rating
       if (data && data.length > 0) {
-        const totalRating = data.reduce((sum, review) => sum + review.rating, 0)
+        const totalRating = data.reduce((sum: number, review: any) => sum + review.rating, 0)
         setAverageRating(totalRating / data.length)
         setTotalReviews(data.length)
       } else {
@@ -163,6 +170,10 @@ export function ServerDetailPage() {
       }
     } catch (error) {
       console.error('Error fetching reviews:', error)
+      // Set empty state on error
+      setReviews([])
+      setAverageRating(0)
+      setTotalReviews(0)
     }
   }
 
@@ -177,12 +188,23 @@ export function ServerDetailPage() {
         .eq('server_id', server.id)
         .single()
 
-      if (!error && data) {
+      if (error) {
+        // If table doesn't exist or no review found, set null
+        if (error.message.includes('relation "server_reviews" does not exist') || 
+            error.message.includes('No rows returned')) {
+          setUserReview(null)
+          return
+        }
+        throw error
+      }
+
+      if (data) {
         setUserReview(data)
         setReviewRating(data.rating)
         setReviewComment(data.comment || '')
       }
     } catch (error) {
+      console.error('Error checking user review:', error)
       setUserReview(null)
     }
   }
@@ -190,42 +212,59 @@ export function ServerDetailPage() {
   const handleSubmitReview = async () => {
     if (!user || !server) return
 
+    // Validation
+    if (reviewRating < 1 || reviewRating > 5) {
+      alert('Please select a valid rating (1-5 stars)')
+      return
+    }
+
     setIsSubmittingReview(true)
 
     try {
       if (userReview) {
         // Update existing review
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('server_reviews')
           .update({
             rating: reviewRating,
-            comment: reviewComment,
+            comment: reviewComment || null,
             updated_at: new Date().toISOString()
           })
           .eq('id', userReview.id)
+          .select()
 
-        if (error) throw error
+        if (error) {
+          console.error('Update review error:', error)
+          throw new Error(`Update failed: ${error.message}`)
+        }
       } else {
         // Create new review
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('server_reviews')
           .insert([{
             user_id: user.id,
             server_id: server.id,
             rating: reviewRating,
-            comment: reviewComment
+            comment: reviewComment || null
           }])
+          .select()
 
-        if (error) throw error
+        if (error) {
+          console.error('Insert review error:', error)
+          throw new Error(`Insert failed: ${error.message}`)
+        }
       }
 
       setShowReviewModal(false)
-      fetchReviews()
-      checkUserReview()
+      setReviewComment('')
+      setReviewRating(5)
+      await fetchReviews()
+      await checkUserReview()
       alert('Review submitted successfully!')
     } catch (error) {
       console.error('Error submitting review:', error)
-      alert('Failed to submit review. Please try again.')
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      alert(`Failed to submit review: ${errorMessage}`)
     } finally {
       setIsSubmittingReview(false)
     }
