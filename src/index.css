@@ -1,3 +1,30 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Custom dropdown styles for dark theme */
+select {
+  background-color: #1f2937 !important;
+  color: white !important;
+}
+
+select option {
+  background-color: #1f2937 !important;
+  color: white !important;
+}
+
+select:focus {
+  background-color: #1f2937 !important;
+  color: white !important;
+}
+
+/* Ensure dropdown options are visible */
+select option:hover {
+  background-color: #374151 !important;
+  color: white !important;
+}
+
+select option:checked {
+  background-color: #7c3aed !important;
+  color: white !important;
+}

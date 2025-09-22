@@ -9,22 +9,20 @@ import { LeaderboardPage } from './components/LeaderboardPage'
 import { AboutPage } from './components/AboutPage'
 import { ServerDetailPage } from './components/ServerDetailPage'
 import { NewsPage } from './components/NewsPage'
-import { AdminPanel } from './components/AdminPanel'
-import { AdminLogin } from './components/AdminLogin'
 import { ProfilePage } from './components/ProfilePage'
 import { MyServersPage } from './components/MyServersPage'
 import { ChangePasswordPage } from './components/ChangePasswordPage'
 import { FavoritesPage } from './components/FavoritesPage'
 import { BoostPackagesPage } from './components/BoostPackagesPage'
 import { ServerAnalyticsPage } from './components/ServerAnalyticsPage'
+import AdminApp from './admin/AdminApp'
 
 function App() {
   return (
     <AuthProvider>
       <Router>
         <Routes>
-          <Route path="/admin/login" element={<AdminLogin />} />
-          <Route path="/admin" element={<AdminPanel />} />
+          <Route path="/admin/*" element={<AdminApp />} />
           <Route path="/*" element={
             <Layout>
               <Routes>
