@@ -5,6 +5,10 @@
 [build.environment]
   NODE_VERSION = "18"
 
+# Netlify Functions plugin
+[[plugins]]
+  package = "@netlify/plugin-functions-install-core"
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
