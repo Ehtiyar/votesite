@@ -1,6 +1,15 @@
 -- Fix missing columns and tables
 -- Bu script'i Supabase SQL Editor'da çalıştırın
 
+-- 0. Önce update_updated_at_column fonksiyonunu oluştur
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
 -- 1. Servers tablosuna eksik sütunları ekle
 DO $$ 
 BEGIN
@@ -212,10 +221,16 @@ CREATE POLICY "Users can update their own reviews" ON server_reviews
 CREATE POLICY "Users can delete their own reviews" ON server_reviews
   FOR DELETE USING (auth.uid() = user_id);
 
--- 4. Server Reviews için trigger oluştur
-DROP TRIGGER IF EXISTS update_server_reviews_updated_at ON server_reviews;
-CREATE TRIGGER update_server_reviews_updated_at BEFORE UPDATE ON server_reviews
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+-- 4. Server Reviews için trigger oluştur (eğer tablo varsa)
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'server_reviews') THEN
+        DROP TRIGGER IF EXISTS update_server_reviews_updated_at ON server_reviews;
+        CREATE TRIGGER update_server_reviews_updated_at BEFORE UPDATE ON server_reviews
+          FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+        RAISE NOTICE 'Server reviews trigger created';
+    END IF;
+END $$;
 
 -- 5. Servers tablosu için RLS politikalarını yeniden oluştur
 ALTER TABLE servers ENABLE ROW LEVEL SECURITY;
@@ -238,19 +253,51 @@ CREATE POLICY "Users can update their own servers" ON servers
 CREATE POLICY "Users can delete their own servers" ON servers
   FOR DELETE USING (auth.uid() = owner_id);
 
--- 6. Servers tablosu için trigger oluştur
-DROP TRIGGER IF EXISTS update_servers_updated_at ON servers;
-CREATE TRIGGER update_servers_updated_at BEFORE UPDATE ON servers
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+-- 6. Servers tablosu için trigger oluştur (eğer tablo varsa)
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'servers') THEN
+        DROP TRIGGER IF EXISTS update_servers_updated_at ON servers;
+        CREATE TRIGGER update_servers_updated_at BEFORE UPDATE ON servers
+          FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+        RAISE NOTICE 'Servers trigger created';
+    END IF;
+END $$;
 
--- 7. Index'leri oluştur
-CREATE INDEX IF NOT EXISTS idx_servers_owner_id ON servers(owner_id);
-CREATE INDEX IF NOT EXISTS idx_servers_category ON servers(category);
-CREATE INDEX IF NOT EXISTS idx_servers_member_count ON servers(member_count DESC);
-CREATE INDEX IF NOT EXISTS idx_servers_created_at ON servers(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_server_reviews_server_id ON server_reviews(server_id);
-CREATE INDEX IF NOT EXISTS idx_server_reviews_user_id ON server_reviews(user_id);
-CREATE INDEX IF NOT EXISTS idx_server_reviews_created_at ON server_reviews(created_at DESC);
+-- 7. Index'leri oluştur (eğer sütunlar varsa)
+DO $$
+BEGIN
+    -- Servers tablosu index'leri
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'servers') THEN
+        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'servers' AND column_name = 'owner_id') THEN
+            CREATE INDEX IF NOT EXISTS idx_servers_owner_id ON servers(owner_id);
+        END IF;
+        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'servers' AND column_name = 'category') THEN
+            CREATE INDEX IF NOT EXISTS idx_servers_category ON servers(category);
+        END IF;
+        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'servers' AND column_name = 'member_count') THEN
+            CREATE INDEX IF NOT EXISTS idx_servers_member_count ON servers(member_count DESC);
+        END IF;
+        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'servers' AND column_name = 'created_at') THEN
+            CREATE INDEX IF NOT EXISTS idx_servers_created_at ON servers(created_at DESC);
+        END IF;
+        RAISE NOTICE 'Servers indexes created';
+    END IF;
+
+    -- Server reviews tablosu index'leri
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'server_reviews') THEN
+        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'server_reviews' AND column_name = 'server_id') THEN
+            CREATE INDEX IF NOT EXISTS idx_server_reviews_server_id ON server_reviews(server_id);
+        END IF;
+        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'server_reviews' AND column_name = 'user_id') THEN
+            CREATE INDEX IF NOT EXISTS idx_server_reviews_user_id ON server_reviews(user_id);
+        END IF;
+        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'server_reviews' AND column_name = 'created_at') THEN
+            CREATE INDEX IF NOT EXISTS idx_server_reviews_created_at ON server_reviews(created_at DESC);
+        END IF;
+        RAISE NOTICE 'Server reviews indexes created';
+    END IF;
+END $$;
 
 -- 8. Başarı mesajı
 SELECT 'All missing columns and tables have been created successfully!' as message;

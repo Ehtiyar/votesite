@@ -76,6 +76,7 @@ export function ServerDetailPage() {
 
   useEffect(() => {
     if (id) {
+      console.log('ServerDetailPage: Fetching server and reviews for ID:', id)
       fetchServer()
       fetchReviews()
     }
@@ -134,6 +135,8 @@ export function ServerDetailPage() {
     if (!server) return
 
     try {
+      console.log('Fetching reviews for server:', server.id)
+      
       const { data, error } = await supabase
         .from('server_reviews')
         .select(`
@@ -149,6 +152,7 @@ export function ServerDetailPage() {
         console.error('Error fetching reviews:', error)
         // If table doesn't exist, set empty arrays
         if (error.message.includes('relation "server_reviews" does not exist')) {
+          console.log('server_reviews table does not exist')
           setReviews([])
           setAverageRating(0)
           setTotalReviews(0)
@@ -157,16 +161,20 @@ export function ServerDetailPage() {
         throw error
       }
 
+      console.log('Reviews fetched:', data)
       setReviews(data || [])
       
       // Calculate average rating
       if (data && data.length > 0) {
         const totalRating = data.reduce((sum: number, review: any) => sum + review.rating, 0)
-        setAverageRating(totalRating / data.length)
+        const avgRating = totalRating / data.length
+        setAverageRating(avgRating)
         setTotalReviews(data.length)
+        console.log(`Total reviews: ${data.length}, Average rating: ${avgRating}`)
       } else {
         setAverageRating(0)
         setTotalReviews(0)
+        console.log('No reviews found')
       }
     } catch (error) {
       console.error('Error fetching reviews:', error)
@@ -181,6 +189,8 @@ export function ServerDetailPage() {
     if (!user || !server) return
 
     try {
+      console.log('Checking user review for user:', user.id, 'server:', server.id)
+      
       const { data, error } = await supabase
         .from('server_reviews')
         .select('*')
@@ -189,9 +199,11 @@ export function ServerDetailPage() {
         .single()
 
       if (error) {
+        console.log('User review check error:', error)
         // If table doesn't exist or no review found, set null
         if (error.message.includes('relation "server_reviews" does not exist') || 
             error.message.includes('No rows returned')) {
+          console.log('No user review found')
           setUserReview(null)
           return
         }
@@ -199,6 +211,7 @@ export function ServerDetailPage() {
       }
 
       if (data) {
+        console.log('User review found:', data)
         setUserReview(data)
         setReviewRating(data.rating)
         setReviewComment(data.comment || '')
@@ -258,8 +271,13 @@ export function ServerDetailPage() {
       setShowReviewModal(false)
       setReviewComment('')
       setReviewRating(5)
-      await fetchReviews()
-      await checkUserReview()
+      
+      // Refresh reviews and user review
+      await Promise.all([
+        fetchReviews(),
+        checkUserReview()
+      ])
+      
       alert('Review submitted successfully!')
     } catch (error) {
       console.error('Error submitting review:', error)
@@ -690,6 +708,11 @@ export function ServerDetailPage() {
                 <span>{userReview ? 'Edit Review' : 'Write Review'}</span>
               </button>
             )}
+          </div>
+
+          {/* Debug info - remove this later */}
+          <div className="text-xs text-gray-500 mb-4">
+            Debug: Total reviews: {totalReviews}, Reviews array length: {reviews.length}
           </div>
 
           {totalReviews > 0 ? (
